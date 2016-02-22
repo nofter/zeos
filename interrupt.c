@@ -81,9 +81,10 @@ void setIdt()
   idtR.limit = IDT_ENTRIES * sizeof(Gate) - 1;
   
   set_handlers();
-
+  setInterruptHandler(33, keyborad_handler, 0);
   /* ADD INITIALIZATION CODE FOR INTERRUPT VECTOR */
 
   set_idt_reg(&idtR);
 }
+
 
