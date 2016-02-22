@@ -51,7 +51,7 @@
       movl %edx, %ds;           \
       movl %edx, %es
 
-
+	
 #define RESTORE_ALL \
 	popl %ebx; \
 	popl %ecx; \
@@ -73,6 +73,7 @@ outb %al, $0x20;
 
 ENTRY (keyboard_handler)
 	SAVE_ALL
+	EOI
 	call keyboard_routine;
 	RESTORE_ALL
 	iret; 
