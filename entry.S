@@ -4,6 +4,7 @@
 
 #include <asm.h>
 #include <segment.h>
+#include <errno.h>
 
 
 /**************************************************/
@@ -93,7 +94,7 @@ fin:
 	movl %eax, 0x18(%esp)
 	RESTORE_ALL
 	iret
-	
+
 
 
 
