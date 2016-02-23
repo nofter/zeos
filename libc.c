@@ -6,6 +6,9 @@
 
 #include <types.h>
 
+#include <errno.h> 
+
+
 int errno;
 
 void itoa(int a, char *b)
@@ -43,3 +46,26 @@ int strlen(char *a)
   return i;
 }
 
+int write(int fd, char *buffer, int size)
+{
+  int result;
+
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : "=a" (result)
+    : "a" (4), "b" (fd), "c" (buffer), "d" (size));
+    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;
+      return result;
+    }
+
+}
+
+
+void perror()
+{
+  //PRINT ERROR STD OUTPUT
+}
