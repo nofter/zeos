@@ -6,6 +6,7 @@
 #include <segment.h>
 #include <hardware.h>
 #include <io.h>
+#include <system.h>
 
 #include <zeos_interrupt.h>
 
@@ -83,8 +84,9 @@ void setIdt()
   set_handlers();
 
   /*interruptions*/
-  
+  setInterruptHandler(32, clock_handler, 0);
   setInterruptHandler(33, keyboard_handler, 0);
+
   
   /* system call*/
   setTrapHandler(0x80, system_call_handler, 3);
@@ -100,4 +102,10 @@ void keyboard_routine()
   Byte lletra;
   lletra = inb(0x60);
   if (lletra & 0x80) printc_xy(10, 10, char_map[lletra&0x7f]);
+}
+
+void clock_routine()
+{
+  zeos_ticks++;
+  zeos_show_clock();
 }

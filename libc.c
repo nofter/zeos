@@ -64,7 +64,23 @@ int write(int fd, char *buffer, int size)
 
 }
 
+int gettime()
+{
+  int result;
 
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : "=a" (result)
+    : "a" (10));
+    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;
+      return result;
+    }
+
+}
 void perror()
 {
   //PRINT ERROR STD OUTPUT

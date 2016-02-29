@@ -57,7 +57,7 @@
 	popl %ebx; \
 	popl %ecx; \
 	popl %edx; \
-      	popl %esi; \
+    popl %esi; \
 	popl %edi; \
 	popl %ebp; \
 	popl %eax; \
@@ -76,6 +76,13 @@ ENTRY (keyboard_handler)
 	SAVE_ALL
 	EOI
 	call keyboard_routine;
+	RESTORE_ALL
+	iret; 
+
+ENTRY (clock_handler)
+	SAVE_ALL
+	EOI
+	call clock_routine;
 	RESTORE_ALL
 	iret; 
 
