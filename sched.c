@@ -23,7 +23,8 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 #endif
 
 extern struct list_head blocked;
-
+struct list_head freequeue;
+struct list_head ready_queue;
 
 /* get_DIR - Returns the Page Directory address for task 't' */
 page_table_entry * get_DIR (struct task_struct *t) 
@@ -58,6 +59,20 @@ void cpu_idle(void)
 	;
 	}
 }
+void init_freequeue(void)
+{
+	INIT_LIST_HEAD(&freequeue);
+	int i;
+	
+	for(i=0; i < NR_TASKS; i++)
+	{
+		list_add( &task[i].task.list, &freequeue );
+	}
+}
+void init_readyqueue(void) 
+{
+	INIT_LIST_HEAD(&ready_queue);
+}
 
 void init_idle (void)
 {
@@ -66,6 +81,7 @@ void init_idle (void)
 
 void init_task1(void)
 {
+	
 }
 
 
