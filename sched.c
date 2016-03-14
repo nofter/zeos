@@ -59,6 +59,7 @@ void cpu_idle(void)
 	;
 	}
 }
+
 void init_freequeue(void)
 {
 	INIT_LIST_HEAD(&freequeue);
@@ -69,6 +70,7 @@ void init_freequeue(void)
 		list_add( &task[i].task.list, &freequeue );
 	}
 }
+
 void init_readyqueue(void) 
 {
 	INIT_LIST_HEAD(&ready_queue);
@@ -76,12 +78,38 @@ void init_readyqueue(void)
 
 void init_idle (void)
 {
-
+	/*available task_union*/
+    struct list_head *first = list_first(&freequeue);
+    idle_task = list_head_to_task_struct(first);
+    list_del(first);
+    /*Assign PID 0 to the process*/
+    idle_task->PID = 0;
+    /*Initialize field dir_pages_baseAaddr*/
+    allocate_DIR(idle_task);
+    /*Initialize an execution context for the procees*/
+    union task_union *idle_task_stack = (union task_union *)idle_task;
+    /*Store in the stack of the idle process the address of cpu_idle function*/ 
+    idle_task_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
+    /*we want to assign to register ebp when undoing the dynamic link (it can be 0),*/
+    idle_task_stack->stack[KERNEL_STACK_SIZE-2] = 0;
+    /*keep (in a field of its task_struct) the position of the stack where
+we have stored the initial value for the ebp register*/
+    idle_task->kernel_esp = (unsigned long *)&(idle_task_stack->stack[KERNEL_STACK_SIZE-2]);
 }
 
 void init_task1(void)
 {
-	
+	struct list_head *first = list_first(&freequeue);
+    task1 = list_head_to_task_struct(first);
+    list_del(first);
+    /*Assign PID 1*/
+    idle_task->PID = 1;
+    /*Initialize field dir_pages_baseAaddr*/
+    allocate_DIR(task1);
+    /*Initialize an execution context for the procees*/
+    union task_union *task1_stack = (union task_union *)task1_task;
+    
+    
 }
 
 
