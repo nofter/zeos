@@ -99,17 +99,22 @@ we have stored the initial value for the ebp register*/
 
 void init_task1(void)
 {
+	/*available task_union*/
 	struct list_head *first = list_first(&freequeue);
-    task1 = list_head_to_task_struct(first);
+    PCB_task1 = list_head_to_task_struct(first);
     list_del(first);
+
     /*Assign PID 1*/
-    idle_task->PID = 1;
+    PCB_task1->PID = 1;
     /*Initialize field dir_pages_baseAaddr*/
-    allocate_DIR(task1);
-    /*Initialize an execution context for the procees*/
-    union task_union *task1_stack = (union task_union *)task1_task;
-    
-    
+    allocate_DIR(PCB_task1);
+    /*initialization of its address space*/
+    free_user_pages(PCB_task1);
+    /*Update the TSS to make it point to the new_task system stack*/
+	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);  
+	/*Set its page directory as the current page directory in the system*/
+	set_cr3(get_DIR(PCB_task1));
+
 }
 
 
