@@ -15,12 +15,27 @@ union task_union protected_tasks[NR_TASKS+2]
 
 union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TASKS] */
 
-#if 0
+void task_switch(union task_union* new){
+	//Save ESI, EDI, EBX
+	inner_task_switch(new);
+	//Restore ESI, EDI, EBX
+}
+
+void inner_task_switch(union task_union* new){
+	tss.esp0 = KERNEL_ESP((union task_union*)new); //necessari el casting ???
+	set_cr3(get_DIR(new));
+	//store EBP (address of current system stack, where inner_task_switch begins - dynamic link) in PCB
+	//change stack => set ESP to point stored value in NEW PCB
+	//restore EBP
+	return;//RET
+}
+
+//#if 0
 struct task_struct *list_head_to_task_struct(struct list_head *l)
 {
   return list_entry( l, struct task_struct, list);
 }
-#endif
+//#endif
 
 extern struct list_head blocked;
 struct list_head freequeue;
@@ -109,7 +124,8 @@ void init_task1(void)
     /*Initialize field dir_pages_baseAaddr*/
     allocate_DIR(PCB_task1);
     /*initialization of its address space*/
-    free_user_pages(PCB_task1);
+//free_user_pages(PCB_task1);
+    set_user_pages(PCB_task1);
     /*Update the TSS to make it point to the new_task system stack*/
 	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);  
 	/*Set its page directory as the current page directory in the system*/
