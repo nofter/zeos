@@ -17,29 +17,29 @@ union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TAS
 
 void task_switch(union task_union* new){
 	//Save ESI, EDI, EBX
-	/*__asm__ __volatile__(
-	"pushl %%esi;n\t"
-	"pushl %%edi;n\t"
-	"pushl %%ebx;n\t"
-	: : );*/
+	__asm__ __volatile__(
+	"pushl %%esi;\n\t"
+	"pushl %%edi;\n\t"
+	"pushl %%ebx;\n\t"
+	: : );
 
-	inner_task_switch(new);
+	//inner_task_switch(new); //TODO ARREGLAR
 
 	//Restore EBX, EDI, ESI
-	/*__asm__ __volatile__(
-	"popl %%ebx;n\t"
-	"popl %%edi;n\t"
-	"popl %%esi;n\t"
-	: : );*/
+	__asm__ __volatile__(
+	"popl %%ebx;\n\t"
+	"popl %%edi;\n\t"
+	"popl %%esi;\n\t"
+	: : );
 }
 
 void inner_task_switch(union task_union* inner_new){
-	int par;
+	unsigned long* par;
 
 	//Update TSS
 	tss.esp0 = KERNEL_ESP((union task_union*)inner_new); //necessari el casting ???
 	//change user address space
-	set_cr3(get_DIR(inner_new));
+	set_cr3(get_DIR((struct task_struct*) inner_new));
 
 	//store EBP (address of current system stack, where inner_task_switch begins - dynamic link) in PCB
 	__asm__ __volatile__(
@@ -53,14 +53,14 @@ void inner_task_switch(union task_union* inner_new){
 	__asm__ __volatile__ (
 	"movl %0,%%esp\n\t"
 	: /*no output*/
-	: "m" (par);
+	: "m" (par));
 
 	//restore EBP
 	par = current()->kernel_esp;
 	__asm__ __volatile__ (
 	"movl %0,%%ebp\n\t"
 	: /*no output*/
-	: "m" (par);
+	: "m" (par));
 
 	return;//RET
 }
@@ -130,7 +130,7 @@ void init_idle (void)
 {
 	/*available task_union*/
     struct list_head *first = list_first(&freequeue);
-    idle_task = list_head_to_task_struct(first);
+    struct task_struct* idle_task = list_head_to_task_struct(first);
     list_del(first);
     /*Assign PID 0 to the process*/
     idle_task->PID = 0;
@@ -151,7 +151,7 @@ void init_task1(void)
 {
 	/*available task_union*/
 	struct list_head *first = list_first(&freequeue);
-    PCB_task1 = list_head_to_task_struct(first);
+    struct task_struct* PCB_task1 = list_head_to_task_struct(first);
     list_del(first);
 
     /*Assign PID 1*/
@@ -170,7 +170,8 @@ void init_task1(void)
 
 
 void init_sched(){
-
+	init_freequeue();
+	init_readyqueue();
 }
 
 struct task_struct* current()

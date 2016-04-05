@@ -18,7 +18,7 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
-  int kernel_esp;		//"stackpointer(int)/register(DWord)" type
+  unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
 };
 
 union task_union {
@@ -41,10 +41,13 @@ void init_task1(void);
 void init_idle(void);
 
 void init_sched(void);
+void init_readyqueue(void);  //TODO move a un altre lloc
+void init_freequeue(void);  //TODO move a un altre lloc
 
 struct task_struct * current();
 
 void task_switch(union task_union*t);
+void inner_task_switch(union task_union* inner_new);
 
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 

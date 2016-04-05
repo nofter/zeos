@@ -9,9 +9,14 @@ int __attribute__ ((__section__(".text.main")))
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
   while(1) {
-    int i = 0;
+//    int i = 0;
     int valor = gettime();
     itoa(valor,buff);
     write(1, buff, sizeof(buff));
+    write(1, "\n", 2);
+
+/*    valor = getpid();
+    itoa(valor,buff);
+    write(1, buff, sizeof(buff));*/
   }
 }

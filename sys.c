@@ -69,7 +69,9 @@ int sys_write(int fd, char * buffer, int size)
 //the number of bytes written if OK.
 }
 
+struct task_struct *idle_task;
 int sys_gettime()
 {
+	//if (zeos_ticks%10 < 0) task_switch((union task_union*) idle_task); //TODO
 	return zeos_ticks;
 }
