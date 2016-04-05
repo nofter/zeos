@@ -18,7 +18,7 @@ struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
-  //TODO kernel_esp;	//missing "stackpointer/register" type
+  int kernel_esp;		//"stackpointer(int)/register(DWord)" type
 };
 
 union task_union {

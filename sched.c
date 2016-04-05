@@ -17,16 +17,51 @@ union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TAS
 
 void task_switch(union task_union* new){
 	//Save ESI, EDI, EBX
+	/*__asm__ __volatile__(
+	"pushl %%esi;n\t"
+	"pushl %%edi;n\t"
+	"pushl %%ebx;n\t"
+	: : );*/
+
 	inner_task_switch(new);
-	//Restore ESI, EDI, EBX
+
+	//Restore EBX, EDI, ESI
+	/*__asm__ __volatile__(
+	"popl %%ebx;n\t"
+	"popl %%edi;n\t"
+	"popl %%esi;n\t"
+	: : );*/
 }
 
-void inner_task_switch(union task_union* new){
-	tss.esp0 = KERNEL_ESP((union task_union*)new); //necessari el casting ???
-	set_cr3(get_DIR(new));
+void inner_task_switch(union task_union* inner_new){
+	int par;
+
+	//Update TSS
+	tss.esp0 = KERNEL_ESP((union task_union*)inner_new); //necessari el casting ???
+	//change user address space
+	set_cr3(get_DIR(inner_new));
+
 	//store EBP (address of current system stack, where inner_task_switch begins - dynamic link) in PCB
-	//change stack => set ESP to point stored value in NEW PCB
+	__asm__ __volatile__(
+  	"movl %%ebp, %0"
+	: "=g" (par)
+	);
+	current()->kernel_esp = par;
+
+	//CHANGE STACK => set ESP to point to the stored value in NEW PCB
+	//par = inner_new->kernel_esp;
+	__asm__ __volatile__ (
+	"movl %0,%%esp\n\t"
+	: /*no output*/
+	: "m" (par);
+
 	//restore EBP
+	par = current()->kernel_esp;
+	__asm__ __volatile__ (
+	"movl %0,%%ebp\n\t"
+	: /*no output*/
+	: "m" (par);
+
 	return;//RET
 }
 
