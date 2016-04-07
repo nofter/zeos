@@ -4,7 +4,7 @@
 ENTRY (sys_call_table)
 	.long sys_ni_syscall	//00
 	.long sys_ni_syscall	//01
-	.long sys_ni_syscall	//02
+	.long sys_fork      	//02
 	.long sys_ni_syscall	//03
 	.long sys_write				//04
 	.long sys_ni_syscall	//05
@@ -22,8 +22,8 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall	//17
 	.long sys_ni_syscall	//18
 	.long sys_ni_syscall	//19
-	.long sys_getpid	//20
-/*	.long sys_ni_syscall	//1
+	.long sys_getpid    	//20
+/*	.long sys_ni_syscall //1
 	.long sys_ni_syscall	//2
 	.long sys_ni_syscall	//3
 	.long sys_ni_syscall	//4

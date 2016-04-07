@@ -1,12 +1,12 @@
 /*
- * libc.c 
+ * libc.c
  */
 
 #include <libc.h>
 
 #include <types.h>
 
-#include <errno.h> 
+#include <errno.h>
 
 
 int errno;
@@ -15,9 +15,9 @@ void itoa(int a, char *b)
 {
   int i, i1;
   char c;
-  
+
   if (a==0) { b[0]='0'; b[1]=0; return ;}
-  
+
   i=0;
   while (a>0)
   {
@@ -25,7 +25,7 @@ void itoa(int a, char *b)
     a=a/10;
     i++;
   }
-  
+
   for (i1=0; i1<i/2; i1++)
   {
     c=b[i1];
@@ -38,11 +38,11 @@ void itoa(int a, char *b)
 int strlen(char *a)
 {
   int i;
-  
+
   i=0;
-  
+
   while (a[i]!=0) i++;
-  
+
   return i;
 }
 
@@ -90,6 +90,23 @@ int getpid()
     "int $0x80\n\t"
     : "=a" (result)
     : "a" (20));
+    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;
+      return result;
+    }
+}
+
+int fork()
+{
+  int result;
+
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : "=a" (result)
+    : "a" (2));
     if (result<0){
       errno = -result;
       return -1;

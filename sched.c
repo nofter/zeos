@@ -36,6 +36,7 @@ void task_switch(union task_union* new){
 void inner_task_switch(union task_union* inner_new){
 	unsigned long* par;
 
+
 	//Update TSS
 	tss.esp0 = KERNEL_ESP((union task_union*)inner_new); //necessari el casting ???
 	//change user address space
@@ -77,25 +78,25 @@ struct list_head freequeue;
 struct list_head ready_queue;
 
 /* get_DIR - Returns the Page Directory address for task 't' */
-page_table_entry * get_DIR (struct task_struct *t) 
+page_table_entry * get_DIR (struct task_struct *t)
 {
 	return t->dir_pages_baseAddr;
 }
 
 /* get_PT - Returns the Page Table address for task 't' */
-page_table_entry * get_PT (struct task_struct *t) 
+page_table_entry * get_PT (struct task_struct *t)
 {
 	return (page_table_entry *)(((unsigned int)(t->dir_pages_baseAddr->bits.pbase_addr))<<12);
 }
 
 
-int allocate_DIR(struct task_struct *t) 
+int allocate_DIR(struct task_struct *t)
 {
 	int pos;
 
 	pos = ((int)t-(int)task)/sizeof(union task_union);
 
-	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos]; 
+	t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos];
 
 	return 1;
 }
@@ -114,14 +115,14 @@ void init_freequeue(void)
 {
 	INIT_LIST_HEAD(&freequeue);
 	int i;
-	
+
 	for(i=0; i < NR_TASKS; i++)
 	{
 		list_add( &task[i].task.list, &freequeue );
 	}
 }
 
-void init_readyqueue(void) 
+void init_readyqueue(void)
 {
 	INIT_LIST_HEAD(&ready_queue);
 }
@@ -138,7 +139,7 @@ void init_idle (void)
     allocate_DIR(idle_task);
     /*Initialize an execution context for the procees*/
     union task_union *idle_task_stack = (union task_union *)idle_task;
-    /*Store in the stack of the idle process the address of cpu_idle function*/ 
+    /*Store in the stack of the idle process the address of cpu_idle function*/
     idle_task_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
     /*we want to assign to register ebp when undoing the dynamic link (it can be 0),*/
     idle_task_stack->stack[KERNEL_STACK_SIZE-2] = 0;
@@ -151,18 +152,17 @@ void init_task1(void)
 {
 	/*available task_union*/
 	struct list_head *first = list_first(&freequeue);
-    struct task_struct* PCB_task1 = list_head_to_task_struct(first);
-    list_del(first);
-
-    /*Assign PID 1*/
-    PCB_task1->PID = 1;
-    /*Initialize field dir_pages_baseAaddr*/
-    allocate_DIR(PCB_task1);
-    /*initialization of its address space*/
-//free_user_pages(PCB_task1);
-    set_user_pages(PCB_task1);
-    /*Update the TSS to make it point to the new_task system stack*/
-	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);  
+  struct task_struct* PCB_task1 = list_head_to_task_struct(first);
+  list_del(first);
+  /*Assign PID 1*/
+  PCB_task1->PID = 1;
+  /*Initialize field dir_pages_baseAaddr*/
+  allocate_DIR(PCB_task1);
+  /*initialization of its address space*/
+  free_user_pages(PCB_task1);
+  set_user_pages(PCB_task1);
+  /*Update the TSS to make it point to the new_task system stack*/
+	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);
 	/*Set its page directory as the current page directory in the system*/
 	set_cr3(get_DIR(PCB_task1));
 
@@ -172,16 +172,16 @@ void init_task1(void)
 void init_sched(){
 	init_freequeue();
 	init_readyqueue();
+
 }
 
 struct task_struct* current()
 {
   int ret_value;
-  
+
   __asm__ __volatile__(
   	"movl %%esp, %0"
 	: "=g" (ret_value)
   );
   return (struct task_struct*)(ret_value&0xfffff000);
 }
-
