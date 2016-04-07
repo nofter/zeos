@@ -23,7 +23,7 @@ void task_switch(union task_union* new){
 	"pushl %%ebx;\n\t"
 	: : );
 
-	//inner_task_switch(new); //TODO ARREGLAR
+	inner_task_switch(new); //TODO ARREGLAR
 
 	//Restore EBX, EDI, ESI
 	__asm__ __volatile__(
@@ -40,30 +40,40 @@ void inner_task_switch(union task_union* inner_new){
 	//Update TSS
 	tss.esp0 = KERNEL_ESP((union task_union*)inner_new); //necessari el casting ???
 	//change user address space
-	set_cr3(get_DIR((struct task_struct*) inner_new));
+	set_cr3(get_DIR(/*(struct task_struct*) */inner_new));
 
 	//store EBP (address of current system stack, where inner_task_switch begins - dynamic link) in PCB
-	__asm__ __volatile__(
-  	"movl %%ebp, %0"
+/*	__asm__ __volatile__(
+  	"mov %%ebp, %0\n"
 	: "=g" (par)
 	);
 	current()->kernel_esp = par;
 
 	//CHANGE STACK => set ESP to point to the stored value in NEW PCB
-	//par = inner_new->kernel_esp;
+	par = ((struct task_struct*)inner_new)->kernel_esp;
 	__asm__ __volatile__ (
-	"movl %0,%%esp\n\t"
+	"movl %0,%%esp\n"
 	: /*no output*/
-	: "m" (par));
+/*	: "m" (par));
 
 	//restore EBP
 	par = current()->kernel_esp;
 	__asm__ __volatile__ (
-	"movl %0,%%ebp\n\t"
+	"movl %0,%%ebp\n"
+	"addl $4, %%esp\n"
 	: /*no output*/
-	: "m" (par));
+/*	: "m" (par));
 
-	return;//RET
+*/	__asm__ __volatile__(
+	  	"mov %%ebp, %0\n"
+		"movl %1,%%esp\n"
+		"popl %%ebp\n"
+		"ret\n"
+	: "=g" (current()->kernel_esp)
+	: "r" (inner_new.task->kernel_esp)
+	);
+
+//	return;//RET
 }
 
 //#if 0
@@ -73,7 +83,7 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
 }
 //#endif
 
-extern struct list_head blocked;
+struct list_head blocked;
 struct list_head freequeue;
 struct list_head ready_queue;
 
@@ -159,7 +169,7 @@ void init_task1(void)
   /*Initialize field dir_pages_baseAaddr*/
   allocate_DIR(PCB_task1);
   /*initialization of its address space*/
-  free_user_pages(PCB_task1);
+  //free_user_pages(PCB_task1);	//COMMENT
   set_user_pages(PCB_task1);
   /*Update the TSS to make it point to the new_task system stack*/
 	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);
