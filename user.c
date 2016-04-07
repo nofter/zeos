@@ -15,8 +15,16 @@ int __attribute__ ((__section__(".text.main")))
     write(1, buff, sizeof(buff));
     write(1, "\n", 2);
 
-/*    valor = getpid();
+    valor = getpid();
     itoa(valor,buff);
-    write(1, buff, sizeof(buff));*/
+    write(1, buff, sizeof(buff));
+
+    //if(current()->PID==1)
+    //if (gettime()!=0 && gettime()%1000 ==0){
+    //  fork();
+    //}
+    //task_switch((union task_union*)idle_task);
+    //else task_switch((union task_union*)task1);
+
   }
 }

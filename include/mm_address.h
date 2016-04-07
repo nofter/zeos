@@ -16,7 +16,7 @@
 /***********************/
 
 
-#define KERNEL_START     0x10000
+#define KERNEL_START     0x10000  //COMMENT 0x108 implica 107 pag lliures en taula de pags usuari?
 #define L_USER_START        0x100000
 #define PH_USER_START       0x100000
 #define USER_ESP	L_USER_START+(NUM_PAG_CODE+NUM_PAG_DATA)*0x1000-16
@@ -26,4 +26,3 @@
 #define PH_PAGE(x) (x>>12)
 
 #endif
-

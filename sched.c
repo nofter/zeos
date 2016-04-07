@@ -38,42 +38,42 @@ void inner_task_switch(union task_union* inner_new){
 
 
 	//Update TSS
-	tss.esp0 = KERNEL_ESP((union task_union*)inner_new); //necessari el casting ???
+	tss.esp0 = KERNEL_ESP(/*(union task_union*)*/ inner_new); //necessari el casting ???
 	//change user address space
-	set_cr3(get_DIR(/*(struct task_struct*) */inner_new));
+	set_cr3(get_DIR(/*(struct task_struct*)*/ &inner_new->task)); //COMMENT cast necessari ??? al codi d'examen no hi ha cast
 
 	//store EBP (address of current system stack, where inner_task_switch begins - dynamic link) in PCB
-/*	__asm__ __volatile__(
-  	"mov %%ebp, %0\n"
-	: "=g" (par)
+	__asm__ __volatile__(
+  	"mov %%ebp, %0\n\t"
+	: "=g" (current()->kernel_esp)
 	);
-	current()->kernel_esp = par;
+	//current()->kernel_esp = par;
 
 	//CHANGE STACK => set ESP to point to the stored value in NEW PCB
-	par = ((struct task_struct*)inner_new)->kernel_esp;
+	//par = ((struct task_struct*)inner_new)->kernel_esp;
 	__asm__ __volatile__ (
-	"movl %0,%%esp\n"
+	"movl %0,%%esp\n\t"
 	: /*no output*/
-/*	: "m" (par));
+	: "m" (inner_new->task.kernel_esp)
+);
 
 	//restore EBP
-	par = current()->kernel_esp;
+	/*par = current()->kernel_esp;
 	__asm__ __volatile__ (
 	"movl %0,%%ebp\n"
 	"addl $4, %%esp\n"
-	: /*no output*/
-/*	: "m" (par));
+	:
+	: "m" (par));*/
+  __asm__ __volatile__ (
+    "popl %%ebp\n\t"
+    :
+    : );
 
-*/	__asm__ __volatile__(
-	  	"mov %%ebp, %0\n"
-		"movl %1,%%esp\n"
-		"popl %%ebp\n"
-		"ret\n"
-	: "=g" (current()->kernel_esp)
-	: "r" (inner_new.task->kernel_esp)
-	);
+    __asm__ __volatile__ (
+      "ret\n\t"
+      :
+      : );
 
-//	return;//RET
 }
 
 //#if 0
@@ -117,7 +117,8 @@ void cpu_idle(void)
 
 	while(1)
 	{
-	;
+    printk("Kernel Loaded!    ");   //TODO - si es comenta -> page fault
+//;
 	}
 }
 
@@ -141,22 +142,25 @@ void init_idle (void)
 {
 	/*available task_union*/
     struct list_head *first = list_first(&freequeue);
-    struct task_struct* idle_task = list_head_to_task_struct(first);
+    struct task_struct* i_task = list_head_to_task_struct(first);
     list_del(first);
     /*Assign PID 0 to the process*/
-    idle_task->PID = 0;
+    i_task->PID = 0;
     /*Initialize field dir_pages_baseAaddr*/
-    allocate_DIR(idle_task);
+    allocate_DIR(i_task);
     /*Initialize an execution context for the procees*/
-    union task_union *idle_task_stack = (union task_union *)idle_task;
+    union task_union *i_task_stack = (union task_union *)i_task;
     /*Store in the stack of the idle process the address of cpu_idle function*/
-    idle_task_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
+    i_task_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)&cpu_idle;
     /*we want to assign to register ebp when undoing the dynamic link (it can be 0),*/
-    idle_task_stack->stack[KERNEL_STACK_SIZE-2] = 0;
+    i_task_stack->stack[KERNEL_STACK_SIZE-2] = 0;
     /*keep (in a field of its task_struct) the position of the stack where
 we have stored the initial value for the ebp register*/
-    idle_task->kernel_esp = (unsigned long *)&(idle_task_stack->stack[KERNEL_STACK_SIZE-2]);
+    i_task->kernel_esp = (unsigned long *)&(i_task_stack->stack[KERNEL_STACK_SIZE-2]);
+    idle_task = i_task;
 }
+
+struct task_struct *task1;
 
 void init_task1(void)
 {
@@ -175,6 +179,22 @@ void init_task1(void)
 	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);
 	/*Set its page directory as the current page directory in the system*/
 	set_cr3(get_DIR(PCB_task1));
+
+  task1 = PCB_task1;
+
+  /*struct list_head *second = list_first(&freequeue);
+  struct task_struct* PCB_task2 = list_head_to_task_struct(second);
+  list_del(first);
+  PCB_task2->PID = 2;
+  allocate_DIR(PCB_task2);
+  set_user_pages(PCB_task2);
+
+  union task_union *task2_stack = (union task_union *)PCB_task2;
+
+  task2_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)0x10000;
+  task2_stack->stack[KERNEL_STACK_SIZE-2] = 0;*/
+
+
 
 }
 
