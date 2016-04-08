@@ -8,6 +8,7 @@
 #include <list.h>
 #include <types.h>
 #include <mm_address.h>
+#include <stats.h>
 
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
@@ -19,6 +20,9 @@ struct task_struct {
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
+  enum state_t state;
+  int quantum;
+
 };
 
 union task_union {
@@ -41,8 +45,8 @@ extern struct list_head ready_queue;
 #define INITIAL_ESP       	KERNEL_ESP(&task[1])
 
 /* Inicialitza les dades del proces inicial */
-void init_task1(void);
 
+void init_task1(void);
 void init_idle(void);
 
 void init_sched(void);
@@ -67,5 +71,9 @@ void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
 int needs_sched_rr();
 void update_sched_data_rr();
+
+/*headers del quantum*/
+int get_quantum (struct task_struct *t);
+void set_quantum (struct task_struct *t, int new_quantum);
 
 #endif  /* __SCHED_H__ */

@@ -15,6 +15,11 @@ union task_union protected_tasks[NR_TASKS+2]
 
 union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TASKS] */
 
+struct list_head blocked;
+struct list_head freequeue;
+struct list_head ready_queue;
+struct task_struct *task1;
+
 void task_switch(union task_union* new){
 	//Save ESI, EDI, EBX
 	__asm__ __volatile__(
@@ -34,8 +39,7 @@ void task_switch(union task_union* new){
 }
 
 void inner_task_switch(union task_union* inner_new){
-	unsigned long* par;
-
+	//unsigned long* par;
 
 	//Update TSS
 	tss.esp0 = KERNEL_ESP(/*(union task_union*)*/ inner_new); //necessari el casting ???
@@ -56,7 +60,6 @@ void inner_task_switch(union task_union* inner_new){
 	: /*no output*/
 	: "m" (inner_new->task.kernel_esp)
 );
-
 	//restore EBP
 	/*par = current()->kernel_esp;
 	__asm__ __volatile__ (
@@ -69,10 +72,10 @@ void inner_task_switch(union task_union* inner_new){
     :
     : );
 
-    __asm__ __volatile__ (
-      "ret\n\t"
-      :
-      : );
+  __asm__ __volatile__ (
+    "ret\n\t"
+    :
+    : );
 
 }
 
@@ -82,10 +85,6 @@ struct task_struct *list_head_to_task_struct(struct list_head *l)
   return list_entry( l, struct task_struct, list);
 }
 //#endif
-
-struct list_head blocked;
-struct list_head freequeue;
-struct list_head ready_queue;
 
 /* get_DIR - Returns the Page Directory address for task 't' */
 page_table_entry * get_DIR (struct task_struct *t)
@@ -111,6 +110,7 @@ int allocate_DIR(struct task_struct *t)
 	return 1;
 }
 
+
 void cpu_idle(void)
 {
 	__asm__ __volatile__("sti": : :"memory");
@@ -122,6 +122,7 @@ void cpu_idle(void)
 	}
 }
 
+
 void init_freequeue(void)
 {
 	INIT_LIST_HEAD(&freequeue);
@@ -132,6 +133,7 @@ void init_freequeue(void)
 		list_add( &task[i].task.list, &freequeue );
 	}
 }
+
 
 void init_readyqueue(void)
 {
@@ -155,12 +157,11 @@ void init_idle (void)
     /*we want to assign to register ebp when undoing the dynamic link (it can be 0),*/
     i_task_stack->stack[KERNEL_STACK_SIZE-2] = 0;
     /*keep (in a field of its task_struct) the position of the stack where
-we have stored the initial value for the ebp register*/
+    we have stored the initial value for the ebp register*/
     i_task->kernel_esp = (unsigned long *)&(i_task_stack->stack[KERNEL_STACK_SIZE-2]);
     idle_task = i_task;
 }
 
-struct task_struct *task1;
 
 void init_task1(void)
 {
@@ -182,24 +183,10 @@ void init_task1(void)
 
   task1 = PCB_task1;
 
-  /*struct list_head *second = list_first(&freequeue);
-  struct task_struct* PCB_task2 = list_head_to_task_struct(second);
-  list_del(first);
-  PCB_task2->PID = 2;
-  allocate_DIR(PCB_task2);
-  set_user_pages(PCB_task2);
-
-  union task_union *task2_stack = (union task_union *)PCB_task2;
-
-  task2_stack->stack[KERNEL_STACK_SIZE-1] = (unsigned long)0x10000;
-  task2_stack->stack[KERNEL_STACK_SIZE-2] = 0;*/
-
-
-
 }
 
-
-void init_sched(){
+void init_sched()
+{
 	init_freequeue();
 	init_readyqueue();
 
@@ -214,4 +201,28 @@ struct task_struct* current()
 	: "=g" (ret_value)
   );
   return (struct task_struct*)(ret_value&0xfffff000);
+}
+
+void sched_next_rr()
+{
+
+}
+void update_process_state_rr(struct task_struct *t, struct list_head *dest)
+{
+
+}
+int needs_sched_rr(){
+
+}
+void update_sched_data_rr(){
+
+}
+
+int get_quantum (struct task_struct *t)
+{
+
+}
+void set_quantum (struct task_struct *t, int new_quantum)
+{
+
 }

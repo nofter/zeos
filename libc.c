@@ -116,6 +116,22 @@ int fork()
     }
 }
 
+int fork()
+{
+  int result;
+
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : "=a" (result)
+    : "a" (1));
+    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;
+      return result;
+    }
+}
 
 void perror()
 {

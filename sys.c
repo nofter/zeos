@@ -17,6 +17,8 @@
 
 #include <system.h>
 
+#include <p_stats.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -45,7 +47,7 @@ int ret_from_fork(){
 
 int sys_fork()
 {
-    //update_stats(current(), RUSER_TO_RSYS);
+    update_stats(current(), RUSER_TO_RSYS);
 
     int PID = -1; //SEGURETAT ???
     unsigned int i;
@@ -123,9 +125,9 @@ int sys_fork()
     /* Updates child's PCB (only the ones that the child process does not inherit) */
     PID = 4; //TODO new_PID()
     pcb_child->PID = PID;
-    //pcb_child->state = ST_READY;
+    pcb_child->state = ST_READY;
     //pcb_child->remainder_reads = 0;
-    //init_stats(pcb_child);
+    init_stats(pcb_child);
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -148,9 +150,9 @@ int sys_fork()
     list_add_tail(&(pcb_child->list), &ready_queue);
 
     /* If current process is idle, immediately removes from the CPU */
-//if (current()->PID == 0) sched_next_rr();
+    if (current()->PID == 0) sched_next_rr();
 
-    //update_stats(current(), RSYS_TO_RUSER);
+    update_stats(current(), RSYS_TO_RUSER);
 
     return PID;
 }
@@ -158,6 +160,28 @@ int sys_fork()
 
 void sys_exit()
 {
+    int i;
+
+    /*Aconseguim les taula de pagines del process*/
+    page_table_entry *process_PT = get_PT(current());
+
+    /*Free the data structures and resources of this process*/
+    for (i = 0; i < NUM_PAG_DATA; i++) {
+      {
+        /*allibarem els phisical_mem del process*/
+        free_frame(get_frame(process_PT, PAG_LOG_INIT_DATA+i));
+        /*Allibarem les pagines logiques del proces*/
+        del_ss_pag(process_PT, PAG_LOG_INIT_DATA+i);
+        }
+
+    /*reset PID*/
+    current()-> PID = -1;
+
+    /*alliiberem el task_struct de la llista*/
+    list_add_tail(&(current()->list), &freequeue);
+
+    /*scheduling*/
+    sched_next_rr();
 }
 
 int sys_write(int fd, char * buffer, int size)
@@ -175,11 +199,10 @@ int sys_write(int fd, char * buffer, int size)
 	res = sys_write_console(buffer, size);
 
 	return res;
-//return ’ Negative number in case of error (specifying the kind of error) and
-//the number of bytes written if OK.
+  //return ’ Negative number in case of error (specifying the kind of error) and
+  //the number of bytes written if OK.
 }
 
-struct task_struct *idle_task;
 
 int sys_gettime()
 {
