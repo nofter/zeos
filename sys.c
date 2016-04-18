@@ -22,6 +22,8 @@
 #define LECTURA 0
 #define ESCRIPTURA 1
 
+extern int remaining_quantum;
+
 int check_fd(int fd, int permissions)
 {
   if (fd!=1) return -9; /*EBADF*/
@@ -166,7 +168,7 @@ void sys_exit()
     page_table_entry *process_PT = get_PT(current());
 
     /*Free the data structures and resources of this process*/
-    for (i = 0; i < NUM_PAG_DATA; i++) {
+    for (i = 0; i < NUM_PAG_DATA; i++)
       {
         /*allibarem els phisical_mem del process*/
         free_frame(get_frame(process_PT, PAG_LOG_INIT_DATA+i));
@@ -183,6 +185,7 @@ void sys_exit()
     /*scheduling*/
     sched_next_rr();
 }
+
 
 int sys_write(int fd, char * buffer, int size)
 {
@@ -203,8 +206,37 @@ int sys_write(int fd, char * buffer, int size)
   //the number of bytes written if OK.
 }
 
-
 int sys_gettime()
 {
 	return zeos_ticks;
+}
+
+void user_to_system(void)
+{
+  update_stats(&(current()->p_stats.user_ticks), &(current()->p_stats.elapsed_total_ticks));
+}
+
+void system_to_user(void)
+{
+  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+}
+
+
+int sys_get_stats(int pid, struct stats *st)
+{
+  int i;
+
+  if (!access_ok(VERIFY_WRITE, st, sizeof(struct stats))) return -EFAULT;
+
+  if (pid<0) return -EINVAL;
+  for (i=0; i<NR_TASKS; i++)
+  {
+    if (task[i].task.PID==pid)
+    {
+      task[i].task.p_stats.remaining_ticks=remaining_quantum;
+      copy_to_user(&(task[i].task.p_stats), st, sizeof(struct stats));
+      return 0;
+    }
+  }
+  return -ESRCH; /*ESRCH */
 }

@@ -10,8 +10,11 @@
 #include <mm_address.h>
 #include <stats.h>
 
+#define INITIAL_ESP       	KERNEL_ESP(&task[1])
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
+#define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
+
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
@@ -21,7 +24,8 @@ struct task_struct {
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
   enum state_t state;
-  int quantum;
+  int total_quantum;		/* Total quantum of the process */
+  struct stats p_stats;		/* Process stats */
 
 };
 
@@ -40,9 +44,7 @@ extern struct list_head freequeue;
 extern struct list_head ready_queue;
 
 
-#define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
 
-#define INITIAL_ESP       	KERNEL_ESP(&task[1])
 
 /* Inicialitza les dades del proces inicial */
 
