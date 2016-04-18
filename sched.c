@@ -6,6 +6,12 @@
 #include <mm.h>
 #include <io.h>
 
+
+#define DEFAULT_QUANTUM 10
+
+int remaining_quantum=0;
+
+
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
  * to protect against out of bound accesses.
@@ -205,26 +211,72 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
-void sched_next_rr()
+void schedule()
 {
-
-}
-void update_process_state_rr(struct task_struct *t, struct list_head *dest)
-{
-
-}
-/*int needs_sched_rr(){
-
-}*/
-void update_sched_data_rr(){
-
+  update_sched_data_rr();
+  if (needs_sched_rr())
+  {
+    update_process_state_rr(current(), &readyqueue);
+    sched_next_rr();
+  }
 }
 
-/*int get_quantum (struct task_struct *t)
+void update_sched_data_rr(void)
 {
+  remaining_quantum--;
+}
 
-}*/
-/*void set_quantum (struct task_struct *t, int new_quantum)
+int needs_sched_rr(void)
 {
+  if ((remaining_quantum==0)&&(!list_empty(&readyqueue))) return 1;
+  if (remaining_quantum==0) remaining_quantum=get_quantum(current());
+  return 0;
+}
 
-}*/
+void update_process_state_rr(struct task_struct *t, struct list_head *dst_queue)
+{
+  if (t->state!=ST_RUN) list_del(&(t->list));
+  if (dst_queue!=NULL)
+  {
+    list_add_tail(&(t->list), dst_queue);
+    if (dst_queue!=&readyqueue) t->state=ST_BLOCKED;
+    else
+    {
+      update_stats(&(t->p_stats.system_ticks), &(t->p_stats.elapsed_total_ticks));
+      t->state=ST_READY;
+    }
+  }
+  else t->state=ST_RUN;
+}
+
+void sched_next_rr(void)
+{
+  struct list_head *e;
+  struct task_struct *t;
+
+  if (!list_empty(&readyqueue)) {
+	e = list_first(&readyqueue);
+    list_del(e);
+
+    t=list_head_to_task_struct(e);
+  }
+  else
+    t=idle_task;
+
+  t->state=ST_RUN;
+  remaining_quantum=get_quantum(t);
+
+  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+  update_stats(&(t->p_stats.ready_ticks), &(t->p_stats.elapsed_total_ticks));
+  t->p_stats.total_trans++;
+
+  task_switch((union task_union*)t);
+}
+
+
+
+void set_quantum(struct task_struct *t, int new_quantum)
+{
+  t->total_quantum=new_quantum;
+}
+

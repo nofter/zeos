@@ -10,8 +10,11 @@
 #include <mm_address.h>
 #include <stats.h>
 
+#define INITIAL_ESP       	KERNEL_ESP(&task[1])
 #define NR_TASKS      10
 #define KERNEL_STACK_SIZE	1024
+#define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
+
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
@@ -20,10 +23,9 @@ struct task_struct {
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
-  //enum state_t state;
-  struct stats state;
-  int quantum;
-
+//int quantum;
+  int total_quantum;		/* Total quantum of the process */
+  struct stats p_stats;		/* Process stats */
 };
 
 union task_union {
@@ -41,9 +43,7 @@ extern struct list_head freequeue;
 extern struct list_head ready_queue;
 
 
-#define KERNEL_ESP(t)       	(DWord) &(t)->stack[KERNEL_STACK_SIZE]
 
-#define INITIAL_ESP       	KERNEL_ESP(&task[1])
 
 /* Inicialitza les dades del proces inicial */
 
@@ -70,8 +70,8 @@ page_table_entry * get_DIR (struct task_struct *t) ;
 /* Headers for the scheduling policy */
 void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
-int needs_sched_rr();
 void update_sched_data_rr();
+int needs_sched_rr();
 
 /*headers del quantum*/
 int get_quantum (struct task_struct *t);
