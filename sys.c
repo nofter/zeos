@@ -17,7 +17,7 @@
 
 #include <system.h>
 
-#include <p_stats.h>
+#include <stats.h>
 
 #define LECTURA 0
 #define ESCRIPTURA 1
@@ -47,7 +47,8 @@ int ret_from_fork(){
 
 int sys_fork()
 {
-    update_stats(current(), RUSER_TO_RSYS);
+    //update_stats(current(), RUSER_TO_RSYS);
+    //current()->stats.
 
     int PID = -1; //SEGURETAT ???
     unsigned int i;
@@ -125,9 +126,9 @@ int sys_fork()
     /* Updates child's PCB (only the ones that the child process does not inherit) */
     PID = 4; //TODO new_PID()
     pcb_child->PID = PID;
-    pcb_child->state = ST_READY;
+//pcb_child->state = ST_READY;
     //pcb_child->remainder_reads = 0;
-    init_stats(pcb_child);
+//init_stats(pcb_child);
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -152,7 +153,7 @@ int sys_fork()
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
 
-    update_stats(current(), RSYS_TO_RUSER);
+//update_stats(current(), RSYS_TO_RUSER);
 
     return PID;
 }
@@ -166,7 +167,7 @@ void sys_exit()
     page_table_entry *process_PT = get_PT(current());
 
     /*Free the data structures and resources of this process*/
-    for (i = 0; i < NUM_PAG_DATA; i++) {
+    for (i = 0; i < NUM_PAG_DATA; i++)
       {
         /*allibarem els phisical_mem del process*/
         free_frame(get_frame(process_PT, PAG_LOG_INIT_DATA+i));
@@ -177,11 +178,11 @@ void sys_exit()
     /*reset PID*/
     current()-> PID = -1;
 
-    /*alliiberem el task_struct de la llista*/
+    /*alliberem el task_struct de la llista*/
     list_add_tail(&(current()->list), &freequeue);
 
     /*scheduling*/
-    sched_next_rr();
+//sched_next_rr();
 }
 
 int sys_write(int fd, char * buffer, int size)

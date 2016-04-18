@@ -117,8 +117,8 @@ void cpu_idle(void)
 
 	while(1)
 	{
-    printk("Kernel Loaded!    ");   //TODO - si es comenta -> page fault
-//;
+    //printk("Kernel Loaded!    ");   //TODO - si es comenta -> page fault
+;
 	}
 }
 
@@ -139,6 +139,8 @@ void init_readyqueue(void)
 {
 	INIT_LIST_HEAD(&ready_queue);
 }
+
+struct task_struct *idle_task;
 
 void init_idle (void)
 {
@@ -211,18 +213,18 @@ void update_process_state_rr(struct task_struct *t, struct list_head *dest)
 {
 
 }
-int needs_sched_rr(){
+/*int needs_sched_rr(){
 
-}
+}*/
 void update_sched_data_rr(){
 
 }
 
-int get_quantum (struct task_struct *t)
+/*int get_quantum (struct task_struct *t)
 {
 
-}
-void set_quantum (struct task_struct *t, int new_quantum)
+}*/
+/*void set_quantum (struct task_struct *t, int new_quantum)
 {
 
-}
+}*/

@@ -20,7 +20,8 @@ struct task_struct {
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
-  enum state_t state;
+  //enum state_t state;
+  struct stats state;
   int quantum;
 
 };
