@@ -108,9 +108,9 @@ void clock_routine()
 {
   zeos_ticks++;
   zeos_show_clock();
-  if (zeos_ticks!=0 && zeos_ticks%1000 ==0) {
-    if(current()->PID==1)
+  /*if (zeos_ticks!=0 && zeos_ticks%1000 ==0) {
+   if(current()->PID==1)
     task_switch((union task_union*)idle_task);
-      else task_switch((union task_union*)task1);
-  }
+    else task_switch((union task_union*)task1);
+  }*/
 }

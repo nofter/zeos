@@ -7,9 +7,10 @@ int __attribute__ ((__section__(".text.main")))
 {
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
+     runjp();
+     while(1);
 
-  while(1) {
-//    int i = 0;
+  /*while(1) {
     int valor = gettime();
     itoa(valor,buff);
     write(1, buff, sizeof(buff));
@@ -26,5 +27,5 @@ int __attribute__ ((__section__(".text.main")))
     //task_switch((union task_union*)idle_task);
     //else task_switch((union task_union*)task1);
 
-  }
+  }*/
 }

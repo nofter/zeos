@@ -24,6 +24,7 @@ struct task_struct {
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
 //int quantum;
+  enum state_t status;
   int total_quantum;		/* Total quantum of the process */
   struct stats p_stats;		/* Process stats */
 };
@@ -36,13 +37,10 @@ union task_union {
 extern union task_union protected_tasks[NR_TASKS+2];
 extern union task_union *task; /* Vector de tasques */
 extern struct task_struct *idle_task;
-extern struct task_struct *task1;
 
 extern struct list_head blocked;
 extern struct list_head freequeue;
 extern struct list_head ready_queue;
-
-
 
 
 /* Inicialitza les dades del proces inicial */
@@ -76,5 +74,7 @@ int needs_sched_rr();
 /*headers del quantum*/
 int get_quantum (struct task_struct *t);
 void set_quantum (struct task_struct *t, int new_quantum);
+
+void update_stats(unsigned long * sys_ticks, unsigned long * elap_total_ticks);
 
 #endif  /* __SCHED_H__ */

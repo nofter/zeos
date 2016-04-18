@@ -23,7 +23,9 @@ union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TAS
 
 struct list_head blocked;
 struct list_head freequeue;
-struct list_head ready_queue;
+struct list_head readyqueue;
+
+struct task_struct *idle_task;
 struct task_struct *task1;
 
 void task_switch(union task_union* new){
@@ -143,10 +145,10 @@ void init_freequeue(void)
 
 void init_readyqueue(void)
 {
-	INIT_LIST_HEAD(&ready_queue);
+	INIT_LIST_HEAD(&readyqueue);
 }
 
-struct task_struct *idle_task;
+
 
 void init_idle (void)
 {
@@ -170,27 +172,56 @@ void init_idle (void)
     idle_task = i_task;
 }
 
+/*
+  struct list_head *l = list_first(&freequeue);
+  list_del(l);
+  struct task_struct *c = list_head_to_task_struct(l);
+  union task_union *uc = (union task_union*)c;
+
+  c->PID=1;
+
+  c->total_quantum=DEFAULT_QUANTUM;
+
+  c->state=ST_RUN;
+
+  remaining_quantum=c->total_quantum;
+
+  init_stats(&c->p_stats);
+
+  allocate_DIR(c);
+
+  set_user_pages(c);
+
+  tss.esp0=(DWord)&(uc->stack[KERNEL_STACK_SIZE]);
+
+  set_cr3(c->dir_pages_baseAddr);
+*/
 
 void init_task1(void)
 {
 	/*available task_union*/
 	struct list_head *first = list_first(&freequeue);
-  struct task_struct* PCB_task1 = list_head_to_task_struct(first);
+
   list_del(first);
+
+  struct task_struct *PCB1 = list_head_to_task_struct(first);
+  union task_union *task1 = (union task_union*)PCB1;
   /*Assign PID 1*/
-  PCB_task1->PID = 1;
+  task1->PID = 1;
+
+  task1->total_quantum=DEFAULT_QUANTUM;
+  remaining_quantum=task1->total_quantum;
+  init_stats(&c->p_stats);
   /*Initialize field dir_pages_baseAaddr*/
-  allocate_DIR(PCB_task1);
+  allocate_DIR(task1);
   /*initialization of its address space*/
   //free_user_pages(PCB_task1);	//COMMENT
-  set_user_pages(PCB_task1);
+  set_user_pages(task1);
   /*Update the TSS to make it point to the new_task system stack*/
-	tss.esp0 = KERNEL_ESP((union task_union*)PCB_task1);
+  tss.esp0=(DWord)&(uc->stack[KERNEL_STACK_SIZE]);
+	//tss.esp0 = KERNEL_ESP((union task_union*)task1);
 	/*Set its page directory as the current page directory in the system*/
-	set_cr3(get_DIR(PCB_task1));
-
-  task1 = PCB_task1;
-
+	set_cr3(get_DIR(task1));
 }
 
 void init_sched()
@@ -235,18 +266,18 @@ int needs_sched_rr(void)
 
 void update_process_state_rr(struct task_struct *t, struct list_head *dst_queue)
 {
-  if (t->state!=ST_RUN) list_del(&(t->list));
+  if (t->status!=ST_RUN) list_del(&(t->list));
   if (dst_queue!=NULL)
   {
     list_add_tail(&(t->list), dst_queue);
-    if (dst_queue!=&readyqueue) t->state=ST_BLOCKED;
+    if (dst_queue!=&readyqueue) t->status=ST_BLOCKED;
     else
     {
       update_stats(&(t->p_stats.system_ticks), &(t->p_stats.elapsed_total_ticks));
-      t->state=ST_READY;
+      t->status=ST_READY;
     }
   }
-  else t->state=ST_RUN;
+  else t->status=ST_RUN;
 }
 
 void sched_next_rr(void)
@@ -263,7 +294,7 @@ void sched_next_rr(void)
   else
     t=idle_task;
 
-  t->state=ST_RUN;
+  t->status=ST_RUN;
   remaining_quantum=get_quantum(t);
 
   update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
@@ -273,10 +304,17 @@ void sched_next_rr(void)
   task_switch((union task_union*)t);
 }
 
-
+int get_quantum (struct task_struct *t)
+{
+	return t->total_quantum;
+}
 
 void set_quantum(struct task_struct *t, int new_quantum)
 {
   t->total_quantum=new_quantum;
 }
 
+void update_stats(unsigned long * sys_ticks, unsigned long * elap_total_ticks)
+{
+
+}

@@ -22,6 +22,7 @@
 #define LECTURA 0
 #define ESCRIPTURA 1
 
+int global_PID = 1000;
 extern int remaining_quantum;
 
 int check_fd(int fd, int permissions)
@@ -45,7 +46,7 @@ int ret_from_fork(){
   return 0;
 }
 
-//struct list_head ready_queue;
+struct list_head readyqueue;
 
 int sys_fork()
 {
@@ -126,11 +127,10 @@ int sys_fork()
     set_cr3(get_DIR(pcb_parent));
 
     /* Updates child's PCB (only the ones that the child process does not inherit) */
-    PID = 4; //TODO new_PID()
-    pcb_child->PID = PID;
-//pcb_child->state = ST_READY;
+    pcb_child->PID = global_PID++;
+    pcb_child->status = ST_READY;
     //pcb_child->remainder_reads = 0;
-//init_stats(pcb_child);
+    //init_stats(pcb_child);
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -150,7 +150,7 @@ int sys_fork()
     child->task.kernel_esp = &child->stack[stack_stride-1];
 
     /* Adds child process to ready queue and returns its PID from parent */
-    list_add_tail(&(pcb_child->list), &ready_queue);
+    list_add_tail(&(pcb_child->list), &readyqueue);
 
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
@@ -184,7 +184,7 @@ void sys_exit()
     list_add_tail(&(current()->list), &freequeue);
 
     /*scheduling*/
-//sched_next_rr();
+    sched_next_rr();
 }
 
 
