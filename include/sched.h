@@ -1,11 +1,11 @@
 /*
  * sched.h - Estructures i macros pel tractament de processos
- */
 
 #ifndef __SCHED_H__
 #define __SCHED_H__
 
 #include <list.h>
+*/
 #include <types.h>
 #include <mm_address.h>
 #include <stats.h>
@@ -43,6 +43,7 @@ extern struct list_head freequeue;
 extern struct list_head ready_queue;
 
 
+
 /* Inicialitza les dades del proces inicial */
 
 void init_task1(void);
@@ -75,6 +76,17 @@ int needs_sched_rr();
 int get_quantum (struct task_struct *t);
 void set_quantum (struct task_struct *t, int new_quantum);
 
+/*Headers dels stats*/
+void init_stats(void);
 void update_stats(unsigned long * sys_ticks, unsigned long * elap_total_ticks);
+
+
+void update_stats_ruser_to_rsys(struct task_struct *pcb);
+void update_stats_rsys_to_ruser(struct task_struct *pcb);
+void update_stats_rsys_to_ready(struct task_struct *pcb);
+void update_stats_ready_to_rsys(struct task_struct *pcb);
+void update_stats_blocked_to_rsys(struct task_struct *pcb);
+void update_stats_rsys_to_blocked(struct task_struct *pcb);
+
 
 #endif  /* __SCHED_H__ */

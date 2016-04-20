@@ -50,8 +50,8 @@ struct list_head readyqueue;
 
 int sys_fork()
 {
-    //update_stats(current(), RUSER_TO_RSYS);
-    //current()->stats.
+     update_stats(current(), RUSER_TO_RSYS);
+     //current()->stats;
 
     int PID = -1; //SEGURETAT ???
     unsigned int i;
@@ -63,7 +63,7 @@ int sys_fork()
     }
 
     /* Needed variables related to child and parent processes */
-    struct list_head *free_pcb = list_first(&freequeue);
+    str+uct list_head *free_pcb = list_first(&freequeue);
     union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
     union task_union *parent = (union task_union *)current();
     struct task_struct *pcb_child = &(child->task);
@@ -130,7 +130,7 @@ int sys_fork()
     pcb_child->PID = global_PID++;
     pcb_child->status = ST_READY;
     //pcb_child->remainder_reads = 0;
-    //init_stats(pcb_child);
+    init_stats(pcb_child);
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -155,7 +155,7 @@ int sys_fork()
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
 
-//update_stats(current(), RSYS_TO_RUSER);
+    update_stats(current(), RSYS_TO_RUSER);
 
     return PID;
 }
