@@ -1,14 +1,17 @@
 /*
  * sched.h - Estructures i macros pel tractament de processos
-
+*/
 #ifndef __SCHED_H__
+
 #define __SCHED_H__
 
 #include <list.h>
-*/
+
 #include <types.h>
 #include <mm_address.h>
 #include <stats.h>
+#include <utils.h>
+
 
 #define INITIAL_ESP       	KERNEL_ESP(&task[1])
 #define NR_TASKS      10
@@ -77,16 +80,6 @@ int get_quantum (struct task_struct *t);
 void set_quantum (struct task_struct *t, int new_quantum);
 
 /*Headers dels stats*/
-void init_stats(void);
-void update_stats(unsigned long * sys_ticks, unsigned long * elap_total_ticks);
-
-
-void update_stats_ruser_to_rsys(struct task_struct *pcb);
-void update_stats_rsys_to_ruser(struct task_struct *pcb);
-void update_stats_rsys_to_ready(struct task_struct *pcb);
-void update_stats_ready_to_rsys(struct task_struct *pcb);
-void update_stats_blocked_to_rsys(struct task_struct *pcb);
-void update_stats_rsys_to_blocked(struct task_struct *pcb);
-
-
+void init_stats(struct stats *s);
+void update_stats(unsigned long *sys_ticks, unsigned long *elapsed);
 #endif  /* __SCHED_H__ */

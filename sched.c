@@ -28,6 +28,16 @@ struct task_struct *idle_task;
 struct task_struct *task1;
 
 
+void init_stats(struct stats *s)
+{
+	s->user_ticks = 0;
+	s->system_ticks = 0;
+	s->blocked_ticks = 0;
+	s->ready_ticks = 0;
+	s->elapsed_total_ticks = get_ticks();
+	s->total_trans = 0;
+	s->remaining_ticks = get_ticks();
+}
 
 void task_switch(union task_union* new){
 	//Save ESI, EDI, EBX
@@ -223,6 +233,18 @@ struct task_struct* current()
   return (struct task_struct*)(ret_value&0xfffff000);
 }
 
+void update_stats(unsigned long *sys_ticks, unsigned long *elapsed)
+{
+  unsigned long current_ticks;
+
+  current_ticks=get_ticks();
+
+  *sys_ticks += current_ticks - *elapsed;
+
+  *elapsed=current_ticks;
+
+}
+
 void schedule()
 {
   update_sched_data_rr();
@@ -282,52 +304,4 @@ void sched_next_rr(void)
   t->p_stats.total_trans++;
 
   task_switch((union task_union*)t);
-}
-
-void init_stats(struct stats *s)
-{
-	s->user_ticks = 0;
-	s->system_ticks = 0;
-	s->blocked_ticks = 0;
-	s->ready_ticks = 0;
-	s->elapsed_total_ticks = get_ticks();
-	s->total_trans = 0;
-	s->remaining_ticks = get_ticks();
-}
-
-void update_stats(unsigned long * sys_ticks, unsigned long * elap_total_ticks)
-{
- switch () {
-   case /* value */:
- }
-}
-
-void update_stats_ruser_to_rsys(struct task_struct *pcb)
-{
-
-}
-void update_stats_rsys_to_ruser(struct task_struct *pcb)
-{
-
-}
-
-void update_stats_rsys_to_ready(struct task_struct *pcb)
-{
-
-}
-
-void update_stats_ready_to_rsys(struct task_struct *pcb)
-{
-
-}
-
-void update_stats_blocked_to_rsys(struct task_struct *pcb)
-{
-
-}
-
-void update_stats_rsys_to_blocked(struct task_struct *pcb)
-{
-
-
 }

@@ -19,6 +19,9 @@
 
 #include <stats.h>
 
+
+
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -50,8 +53,7 @@ struct list_head readyqueue;
 
 int sys_fork()
 {
-     update_stats(current(), RUSER_TO_RSYS);
-     //current()->stats;
+
 
     int PID = -1; //SEGURETAT ???
     unsigned int i;
@@ -63,7 +65,7 @@ int sys_fork()
     }
 
     /* Needed variables related to child and parent processes */
-    str+uct list_head *free_pcb = list_first(&freequeue);
+    struct list_head *free_pcb = list_first(&freequeue);
     union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
     union task_union *parent = (union task_union *)current();
     struct task_struct *pcb_child = &(child->task);
@@ -129,7 +131,6 @@ int sys_fork()
     /* Updates child's PCB (only the ones that the child process does not inherit) */
     pcb_child->PID = global_PID++;
     pcb_child->status = ST_READY;
-    //pcb_child->remainder_reads = 0;
     init_stats(pcb_child);
 
     /* Prepares the return of child process. It must return 0
@@ -154,8 +155,6 @@ int sys_fork()
 
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
-
-    update_stats(current(), RSYS_TO_RUSER);
 
     return PID;
 }
