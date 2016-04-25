@@ -8,22 +8,24 @@
 
 #include <stats.h>
 
-int write(int fd, char *buffer, int size);
-
-int gettime();
-
 void itoa(int a, char *b);
 
 int strlen(char *a);
 
-int getpid();
+void exit();
 
 int fork();
 
-void exit();
+int write(int fd, char *buffer, int size);
 
-void perror();
+int gettime();
+
+int clone(void (*function) (void), void *stack);
+
+int getpid();
 
 int get_stats(int pid, struct stats *st);
+
+void perror();
 
 #endif  /* __LIBC_H__ */

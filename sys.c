@@ -131,7 +131,7 @@ int sys_fork()
     /* Updates child's PCB (only the ones that the child process does not inherit) */
     pcb_child->PID = global_PID++;
     pcb_child->status = ST_READY;
-    init_stats(pcb_child);
+    init_stats(&pcb_child->p_stats);
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -189,9 +189,9 @@ void sys_exit()
 
 int sys_write(int fd, char * buffer, int size)
 {
-	int nok, noaccess, res;
+	int nok/*, noaccess*/, res;
 //fd: file descriptor. In this delivery it must always be 1.
-	if(nok = check_fd(fd,ESCRIPTURA)) return nok;
+	if((nok = check_fd(fd,ESCRIPTURA))) return nok;
 //buffer: pointer to the bytes.
 	if(buffer == NULL) return -EFAULT;
 //size: number of bytes.
@@ -221,6 +221,14 @@ void system_to_user(void)
   update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
 }
 
+int sys_clone(void (*function) (void), void *stack)
+{
+
+	//ret -ERROR if !OK
+
+	//ret PID if OK
+	return 0;
+}
 
 int sys_get_stats(int pid, struct stats *st)
 {

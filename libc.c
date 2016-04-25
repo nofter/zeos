@@ -46,6 +46,40 @@ int strlen(char *a)
   return i;
 }
 
+void exit()
+{
+//  int result;
+
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : /*"=a" (result)*/
+    : "a" (1));
+/*    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;*/
+      return /*result*/;
+    /*}*/
+}
+
+int fork()
+{
+  int result;
+
+    __asm__ __volatile__ (
+    "int $0x80\n\t"
+    : "=a" (result)
+    : "a" (2));
+    if (result<0){
+      errno = -result;
+      return -1;
+    } else {
+      errno = 0;
+      return result;
+    }
+}
+
 int write(int fd, char *buffer, int size)
 {
   int result;
@@ -82,6 +116,23 @@ int gettime()
 
 }
 
+int clone(void (*function) (void), void *stack)
+{
+  int result;
+  __asm__ __volatile__ (
+  	"int $0x80\n\t"
+	:"=a" (result)
+	:"a" (19), "b" (function), "c" (stack) );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
+}
+
+
 int getpid()
 {
   int result;
@@ -99,39 +150,6 @@ int getpid()
     }
 }
 
-int fork()
-{
-  int result;
-
-    __asm__ __volatile__ (
-    "int $0x80\n\t"
-    : "=a" (result)
-    : "a" (2));
-    if (result<0){
-      errno = -result;
-      return -1;
-    } else {
-      errno = 0;
-      return result;
-    }
-}
-
-void exit()
-{
-//  int result;
-
-    __asm__ __volatile__ (
-    "int $0x80\n\t"
-    : /*"=a" (result)*/
-    : "a" (1));
-/*    if (result<0){
-      errno = -result;
-      return -1;
-    } else {
-      errno = 0;*/
-      return /*result*/;
-    /*}*/
-}
 
 int get_stats(int pid, struct stats *st)
 {
@@ -151,5 +169,5 @@ int get_stats(int pid, struct stats *st)
 
 void perror()
 {
-  //PRINT ERROR STD OUTPUT
+  //PRINT ERROR STD OUTPUT - TODO
 }
