@@ -120,6 +120,9 @@ page_table_entry * get_PT (struct task_struct *t)
 
 int allocate_DIR(struct task_struct *t)
 {
+
+
+	//TODO afgir comptabilitat d'usos per PCBs / vector de llibertat com la llista de frames lliures + comptador de "propietaris" (es pot implementar en un sol vector amb enters)
 	int pos;
 
 	pos = ((int)t-(int)task)/sizeof(union task_union);
