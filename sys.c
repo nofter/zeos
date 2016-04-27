@@ -49,7 +49,7 @@ int ret_from_fork(){
   return 0;
 }
 
-struct list_head readyqueue;
+//struct list_head readyqueue;
 
 int sys_fork()
 {
@@ -61,7 +61,7 @@ int sys_fork()
     /* Returns error if there isn't any available task in the free queue */
     if (list_empty(&freequeue)) {
         //update_stats(current(), RSYS_TO_RUSER);
-        return -EAGAIN;
+        return -EAGAIN;	//TODO ENOMEM
     }
 
     /* Needed variables related to child and parent processes */

@@ -25,7 +25,7 @@ struct list_head freequeue;
 struct list_head readyqueue;
 
 struct task_struct *idle_task;
-struct task_struct *task1;
+//struct task_struct *task1;
 
 
 void init_stats(struct stats *s)
@@ -145,14 +145,14 @@ void cpu_idle(void)
 }
 
 
-void init_freequeue(void)
+void init_freequeue()
 {
 	INIT_LIST_HEAD(&freequeue);
 	int i;
 
 	for(i=0; i < NR_TASKS; i++)
 	{
-		list_add( &task[i].task.list, &freequeue );
+		list_add( &(task[i].task.list), &freequeue );
 	}
 }
 
@@ -210,13 +210,13 @@ void init_task1(void)
   /*Initialize field dir_pages_baseAaddr*/
   allocate_DIR(task1);
   /*initialization of its address space*/
-  //free_user_pages(PCB_task1);	//COMMENT
   set_user_pages(task1);
   /*Update the TSS to make it point to the new_task system stack*/
   tss.esp0=(DWord)&(tu1->stack[KERNEL_STACK_SIZE]);
 	//tss.esp0 = KERNEL_ESP((union task_union*)task1);
 	/*Set its page directory as the current page directory in the system*/
-	set_cr3(get_DIR(task1));
+//set_cr3(get_DIR(task1));
+set_cr3(task1->dir_pages_baseAddr);
 }
 
 void init_sched()

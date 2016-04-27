@@ -43,7 +43,7 @@ extern struct task_struct *idle_task;
 
 extern struct list_head blocked;
 extern struct list_head freequeue;
-extern struct list_head ready_queue;
+extern struct list_head readyqueue;
 
 
 
@@ -53,8 +53,8 @@ void init_task1(void);
 void init_idle(void);
 
 void init_sched(void);
-void init_readyqueue(void);  //TODO move a un altre lloc
-void init_freequeue(void);  //TODO move a un altre lloc
+//void init_readyqueue(void);  //TODO move a un altre lloc
+//void init_freequeue(void);  //TODO move a un altre lloc
 
 struct task_struct * current();
 
