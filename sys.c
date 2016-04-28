@@ -54,43 +54,40 @@ int ret_from_fork(){
 int sys_fork()
 {
 
-
-    int PID = -1; //SEGURETAT ???
+  //  int PID = -1;
     unsigned int i;
 
     /* Returns error if there isn't any available task in the free queue */
-    if (list_empty(&freequeue)) {
-        //update_stats(current(), RSYS_TO_RUSER);
-        return -EAGAIN;	//TODO ENOMEM
-    }
+    if (list_empty(&freequeue)) return -ENOMEM;
+
 
     /* Needed variables related to child and parent processes */
     struct list_head *free_pcb = list_first(&freequeue);
     union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
-    union task_union *parent = (union task_union *)current();
-    struct task_struct *pcb_child = &(child->task);
-    struct task_struct *pcb_parent = &(parent->task);
+  //  union task_union *parent = (union task_union *)current();
+     struct task_struct *pcb_child = &(child->task);
+  //  struct task_struct *pcb_parent = &(current()->task);
 
     list_del(free_pcb);
 
     /* Inherits system code+data */
-    copy_data(parent, child, sizeof(union task_union));
+    copy_data(current(), child, sizeof(union task_union));
 
     /* Allocates new page directory for child process */
     allocate_DIR(pcb_child);
 
-    page_table_entry* pagt_child = get_PT(pcb_child);
-    page_table_entry* pagt_parent = get_PT(pcb_parent);
+    page_table_entry* pagt_child = get_PT(&child->task);
+    page_table_entry* pagt_parent = get_PT(current());
 
     /* Reserve free frames (physical memory) to allocate child's user data */
     int resv_frames[NUM_PAG_DATA];
 
-    for (i = 0; i < NUM_PAG_DATA; i++) {
+    for (i = 0; i < NUM_PAG_DATA;  i++) {
 
         /* If there is no enough free frames, those reserved thus far must be freed */
         if ((resv_frames[i] = alloc_frame()) == -1) {
             while (i >= 0) free_frame(resv_frames[i--]);
-            list_add_tail(&(pcb_child->list), &freequeue);
+            list_add_tail(free_pcb, &freequeue);
             //update_stats(current(), RSYS_TO_RUSER);
             return -ENOMEM;
         }
@@ -126,12 +123,12 @@ int sys_fork()
 
 
     /* Flushes entire TLB */
-    set_cr3(get_DIR(pcb_parent));
+    set_cr3(get_DIR(current()));
 
     /* Updates child's PCB (only the ones that the child process does not inherit) */
-    pcb_child->PID = global_PID++;
-    pcb_child->status = ST_READY;
-    init_stats(&pcb_child->p_stats);
+    child->task.PID = ++global_PID;
+    init_stats(&(child->task.p_stats));
+    child->task.status = ST_READY;
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -142,7 +139,7 @@ int sys_fork()
         :"=g"(ebp)
     );
 
-    unsigned int stack_stride = (ebp - (unsigned int)parent)/sizeof(unsigned long);
+    unsigned int stack_stride = (ebp - (unsigned int)current())/sizeof(unsigned long);
 
     /* Dummy value for ebp for the child process */
     child->stack[stack_stride-1] = 0;
@@ -156,7 +153,8 @@ int sys_fork()
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
 
-    return PID;
+
+    return child->task.PID;
 }
 
 

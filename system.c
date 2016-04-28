@@ -1,5 +1,5 @@
 /*
- * system.c - 
+ * system.c -
  */
 
 #include <segment.h>
@@ -39,7 +39,7 @@ int zeos_ticks= 0;
  */
 
 /*
- * This function MUST be 'inline' because it modifies the %esp 
+ * This function MUST be 'inline' because it modifies the %esp
  */
 inline void set_seg_regs(Word data_sel, Word stack_sel, DWord esp)
 {
@@ -60,8 +60,8 @@ inline void set_seg_regs(Word data_sel, Word stack_sel, DWord esp)
 /*
  *   Main entry point to ZEOS Operating System
  */
-int __attribute__((__section__(".text.main"))) 
-  main(void) 
+int __attribute__((__section__(".text.main")))
+  main(void)
 {
 
   set_eflags();
@@ -73,7 +73,7 @@ int __attribute__((__section__(".text.main")))
   // (we are still in real mode).
   set_seg_regs(__KERNEL_DS, __KERNEL_DS, (DWord) &protected_tasks[5]);
 
-  printk("Kernel Loaded!    "); 
+  printk("Kernel Loaded!    ");
 
   /* Initialize hardware data */
   setGdt(); /* Definicio de la taula de segments de memoria */
@@ -98,10 +98,10 @@ int __attribute__((__section__(".text.main")))
   /* Move user code/data now (after the page table initialization) */
   copy_data((void *) KERNEL_START + *p_sys_size, usr_main, *p_usr_size);
 
-  
-  printk("Entering user mode..."); 
+
+  printk("Entering user mode...");
  /*prova E1*/
-  zeos_init_auxjp();
+//zeos_init_auxjp();
  /*######*/
   enable_int();
   /*
@@ -113,5 +113,3 @@ int __attribute__((__section__(".text.main")))
   /* The execution never arrives to this point */
   return 0;
 }
-
-

@@ -26,7 +26,6 @@ struct task_struct {
   struct list_head list;
   int PID;			/* Process ID. This MUST be the first field of the struct. */
   unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
-//int quantum;
   enum state_t status;
   int total_quantum;		/* Total quantum of the process */
   struct stats p_stats;		/* Process stats */

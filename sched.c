@@ -204,6 +204,7 @@ void init_task1(void)
   union task_union *tu1 = (union task_union*)task1;
   /*Assign PID 1*/
   task1->PID = 1;
+  task1->status=ST_RUN;
   task1->total_quantum = DEFAULT_QUANTUM;
   remaining_quantum = task1->total_quantum;
   init_stats(&task1->p_stats);
@@ -213,7 +214,6 @@ void init_task1(void)
   set_user_pages(task1);
   /*Update the TSS to make it point to the new_task system stack*/
   tss.esp0=(DWord)&(tu1->stack[KERNEL_STACK_SIZE]);
-	//tss.esp0 = KERNEL_ESP((union task_union*)task1);
 	/*Set its page directory as the current page directory in the system*/
 //set_cr3(get_DIR(task1));
 set_cr3(task1->dir_pages_baseAddr);
