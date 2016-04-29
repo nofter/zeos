@@ -268,7 +268,10 @@ void update_sched_data_rr(void)
 int needs_sched_rr(void)
 {
   if ((remaining_quantum==0)&&(!list_empty(&readyqueue))) return 1;
-  if (remaining_quantum==0) remaining_quantum = get_quantum(current());
+  if (remaining_quantum==0){
+     remaining_quantum = get_quantum(current());
+     current()->p_stats.total_trans++;
+  }
   return 0;
 }
 
@@ -304,7 +307,7 @@ void sched_next_rr(void)
   t->status=ST_RUN;
   remaining_quantum = get_quantum(t);
 
-  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+  //update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
   update_stats(&(t->p_stats.ready_ticks), &(t->p_stats.elapsed_total_ticks));
   t->p_stats.total_trans++;
 
