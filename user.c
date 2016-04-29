@@ -1,5 +1,6 @@
 #include <libc.h>
 #include <stats.h>
+#include<semaphore.h>
 
 char buff[24];
 int pid;

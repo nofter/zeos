@@ -35,6 +35,7 @@ void itoa(int a, char *b)
   b[i]=0;
 }
 
+
 int strlen(char *a)
 {
   int i;
@@ -46,6 +47,7 @@ int strlen(char *a)
   return i;
 }
 
+
 void exit()
 {
   int result;
@@ -56,12 +58,11 @@ void exit()
     : "a" (1));
     if (result<0){
       errno = -result;
-      return -1;
     } else {
       errno = 0;
-      return result;
     }
 }
+
 
 int fork()
 {
@@ -79,6 +80,7 @@ int fork()
       return result;
     }
 }
+
 
 int write(int fd, char *buffer, int size)
 {
@@ -98,6 +100,7 @@ int write(int fd, char *buffer, int size)
 
 }
 
+
 int gettime()
 {
   int result;
@@ -115,6 +118,7 @@ int gettime()
     }
 
 }
+
 
 int clone(void (*function) (void), void *stack)
 {
@@ -151,6 +155,74 @@ int getpid()
 }
 
 
+int sem_init(int n_sem, unsigned int value)
+{
+  int result;
+  __asm__ __volatile__ (
+  	"int $0x80\n\t"
+	:"=a" (result)
+	:"a" (21), "b" (n_sem), "c" (value) );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
+}
+
+
+int sem_wait(int n_sem)
+{
+  int result;
+  __asm__ __volatile__ (
+  	"int $0x80\n\t"
+	:"=a" (result)
+	:"a" (22), "b" (n_sem) );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
+}
+
+
+int sem_signal(int n_sem)
+{
+  int result;
+  __asm__ __volatile__ (
+  	"int $0x80\n\t"
+	:"=a" (result)
+	:"a" (23), "b" (n_sem) );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
+}
+
+
+int sem_destroy(int n_sem)
+{
+  int result;
+  __asm__ __volatile__ (
+  	"int $0x80\n\t"
+	:"=a" (result)
+	:"a" (24), "b" (n_sem) );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
+}
+
+
 int get_stats(int pid, struct stats *st)
 {
   int result;
@@ -167,7 +239,8 @@ int get_stats(int pid, struct stats *st)
   return result;
 }
 
+
 void perror()
 {
-  //PRINT ERROR STD OUTPUT - TODO
+  //
 }

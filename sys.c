@@ -19,7 +19,7 @@
 
 #include <stats.h>
 
-
+#include<semaphore.h>
 
 
 #define LECTURA 0
@@ -242,4 +242,127 @@ int sys_get_stats(int pid, struct stats *st)
     }
   }
   return -ESRCH; /*ESRCH */
+}
+
+
+int sys_sem_init(int n_sem, unsigned int value)
+{
+    user_to_system();
+
+    /* Check user parameters */
+    if (n_sem < 0 || n_sem >= NR_SEMS) {
+        system_to_user();;
+        return -EINVAL;
+    }
+
+    if (sems[n_sem].owner_pid != -1) {
+        system_to_user();
+        return -EBUSY;
+    }
+
+    sems[n_sem].owner_pid = current()->PID;
+    sems[n_sem].count = value;
+    INIT_LIST_HEAD(&(sems[n_sem].semqueue));
+    system_to_user();
+
+    return 0;
+}
+
+
+int sys_sem_wait(int n_sem)
+{
+    user_to_system();
+
+    /* Check user parameters */
+    if (n_sem < 0 || n_sem >= NR_SEMS || sems[n_sem].owner_pid == -1) {
+        system_to_user();
+        return -EINVAL;
+    }
+
+    if (sems[n_sem].count > 0){
+
+        --sems[n_sem].count;
+
+    }else {
+
+        struct list_head *semqueue = &(sems[n_sem].semqueue);
+        struct list_head *curr_task = &(current()->list);
+        list_del(curr_task);
+        current()->status = ST_BLOCKED;
+        list_add_tail(curr_task, semqueue);
+        system_to_user();
+        sched_next_rr();
+    }
+
+    /* Assures that the semaphore was destroyed while the process is blocked */
+    if (sems[n_sem].owner_pid == -1) {
+        system_to_user();;
+        return -EPERM;
+    }
+
+    system_to_user();
+    return 0;
+}
+
+
+int sys_sem_signal(int n_sem)
+{
+        user_to_system();
+
+    /* Check user parameters */
+    if (n_sem < 0 || n_sem >= NR_SEMS || sems[n_sem].owner_pid == -1) {
+        system_to_user();
+        return -EINVAL;
+    }
+
+    struct list_head *semqueue = &(sems[n_sem].semqueue);
+
+    if (list_empty(semqueue)){
+
+        ++sems[n_sem].count;
+
+    }else {
+
+        struct list_head *elem = list_first(semqueue);
+        struct task_struct *unblocked = list_head_to_task_struct(elem);
+        list_del(elem);
+        unblocked->status = ST_READY;
+        list_add_tail(elem, &readyqueue);
+
+        system_to_user();
+    }
+
+    system_to_user();
+    return 0;
+}
+
+
+int sys_sem_destroy(int n_sem)
+{
+    user_to_system();
+
+    /* Check user parameters */
+    if (n_sem < 0 || n_sem >= NR_SEMS || sems[n_sem].owner_pid == -1) {
+        system_to_user();
+        return -EINVAL;
+    }
+
+    if (sems[n_sem].owner_pid != current()->PID) {
+        system_to_user();
+        return -EPERM;
+    }
+
+    sems[n_sem].owner_pid = -1;
+    struct list_head *semqueue = &(sems[n_sem].semqueue);
+    while(!list_empty(semqueue)) {
+        struct list_head *elem = list_first(semqueue);
+        struct task_struct *unblocked = list_head_to_task_struct(elem);
+        list_del(elem);
+        unblocked->status = ST_READY;
+        list_add_tail(elem, &readyqueue);
+        system_to_user();
+    }
+
+    system_to_user();
+    return 0;
 }

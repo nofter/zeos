@@ -6,9 +6,6 @@
 #include <mm.h>
 #include <io.h>
 
-
-#define DEFAULT_QUANTUM 10
-
 int remaining_quantum = 0;
 
 /**
@@ -26,7 +23,7 @@ struct list_head readyqueue;
 
 struct task_struct *idle_task;
 
-
+struct sem_t sems[NR_SEMS];
 
 void init_stats(struct stats *s)
 {
@@ -162,6 +159,17 @@ void init_readyqueue(void)
 {
 	INIT_LIST_HEAD(&readyqueue);
 }
+
+void init_sems()
+{
+    int i;
+    for (i = 0; i < NR_SEMS; i++) {
+        sems[i].id = i;
+        sems[i].count = 0;
+        sems[i].owner_pid = -1;
+    }
+}
+
 
 int get_quantum (struct task_struct *t)
 {
