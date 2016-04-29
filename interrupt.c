@@ -14,7 +14,7 @@
 Gate idt[IDT_ENTRIES];
 Register    idtR;
 
-char char_map[];/* =
+char char_map[] =
 {
   '\0','\0','1','2','3','4','5','6',
   '7','8','9','0','\'','�','\0','\0',
@@ -29,7 +29,7 @@ char char_map[];/* =
   '2','3','0','\0','\0','\0','<','\0',
   '\0','\0','\0','\0','\0','\0','\0','\0',
   '\0','\0'
-};*/
+};
 
 void setInterruptHandler(int vector, void (*handler)(), int maxAccessibleFromPL)
 {
@@ -107,7 +107,9 @@ void keyboard_routine()
 
 void clock_routine()
 {
+  user_to_system();
   zeos_ticks++;
   zeos_show_clock();
   schedule();
+  system_to_user();
 }

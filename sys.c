@@ -54,19 +54,16 @@ int ret_from_fork(){
 int sys_fork()
 {
 
-  //  int PID = -1;
+    user_to_system();
     unsigned int i;
 
     /* Returns error if there isn't any available task in the free queue */
     if (list_empty(&freequeue)) return -ENOMEM;
 
-
     /* Needed variables related to child and parent processes */
     struct list_head *free_pcb = list_first(&freequeue);
     union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
-  //  union task_union *parent = (union task_union *)current();
-     struct task_struct *pcb_child = &(child->task);
-  //  struct task_struct *pcb_parent = &(current()->task);
+    struct task_struct *pcb_child = &(child->task);
 
     list_del(free_pcb);
 
@@ -88,7 +85,7 @@ int sys_fork()
         if ((resv_frames[i] = alloc_frame()) == -1) {
             while (i >= 0) free_frame(resv_frames[i--]);
             list_add_tail(free_pcb, &freequeue);
-            //update_stats(current(), RSYS_TO_RUSER);
+            system_to_user();
             return -ENOMEM;
         }
     }
@@ -153,7 +150,7 @@ int sys_fork()
     /* If current process is idle, immediately removes from the CPU */
     if (current()->PID == 0) sched_next_rr();
 
-
+    system_to_user();
     return child->task.PID;
 }
 

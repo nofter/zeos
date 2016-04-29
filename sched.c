@@ -20,12 +20,12 @@ union task_union protected_tasks[NR_TASKS+2]
 
 union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TASKS] */
 
-struct list_head blocked;
+extern struct list_head blocked;
 struct list_head freequeue;
 struct list_head readyqueue;
 
 struct task_struct *idle_task;
-//struct task_struct *task1;
+
 
 
 void init_stats(struct stats *s)
@@ -152,6 +152,7 @@ void init_freequeue()
 
 	for(i=0; i < NR_TASKS; i++)
 	{
+    task[i].task.PID = -1;
 		list_add( &(task[i].task.list), &freequeue );
 	}
 }
@@ -205,8 +206,8 @@ void init_task1(void)
   /*Assign PID 1*/
   task1->PID = 1;
   task1->status=ST_RUN;
-  task1->total_quantum = DEFAULT_QUANTUM;
-  remaining_quantum = task1->total_quantum;
+  set_quantum(task1, DEFAULT_QUANTUM);
+  remaining_quantum = get_quantum(task1);
   init_stats(&task1->p_stats);
   /*Initialize field dir_pages_baseAaddr*/
   allocate_DIR(task1);
@@ -223,6 +224,7 @@ void init_sched()
 {
 	init_freequeue();
 	init_readyqueue();
+  remaining_quantum = DEFAULT_QUANTUM;
 }
 
 struct task_struct* current()
@@ -266,7 +268,7 @@ void update_sched_data_rr(void)
 int needs_sched_rr(void)
 {
   if ((remaining_quantum==0)&&(!list_empty(&readyqueue))) return 1;
-  if (remaining_quantum==0) remaining_quantum=get_quantum(current());
+  if (remaining_quantum==0) remaining_quantum = get_quantum(current());
   return 0;
 }
 
