@@ -7,6 +7,7 @@
 #include <io.h>
 
 int remaining_quantum = 0;
+int dir_pages_refs[NR_TASKS] = {0};
 
 /**
  * Container for the Task array and 2 additional pages (the first and the last one)
@@ -114,7 +115,26 @@ page_table_entry * get_PT (struct task_struct *t)
 	return (page_table_entry *)(((unsigned int)(t->dir_pages_baseAddr->bits.pbase_addr))<<12);
 }
 
+int allocate_DIR(struct task_struct *t)
+{
+    int pos;
+    for (pos = 0; pos < NR_TASKS; pos++) {
+        if (dir_pages_refs[pos] == 0) {
+            ++dir_pages_refs[pos];
+            t->dir_pages_baseAddr = (page_table_entry*) &dir_pages[pos];
+            return 1;
+        }
+    }
+    return -1;
+}
+ 
+void update_DIR_refs(struct task_struct *t)
+{
+    /* Calculates which directory page entry has assigned */
+    ++dir_pages_refs[POS_TO_DIR_PAGES_REFS(get_DIR(t))];
+}
 
+/*
 int allocate_DIR(struct task_struct *t)
 {
 
@@ -128,7 +148,7 @@ int allocate_DIR(struct task_struct *t)
 
 	return 1;
 }
-
+*/
 
 void cpu_idle(void)
 {
@@ -232,6 +252,8 @@ void init_sched()
 {
 	init_freequeue();
 	init_readyqueue();
+  /* Initializes array of semaphores */
+  init_sems();
   remaining_quantum = DEFAULT_QUANTUM;
 }
 

@@ -154,6 +154,78 @@ int sys_fork()
     return child->task.PID;
 }
 
+int sys_clone(void (*function) (void), void *stack)
+{
+     user_to_system();
+
+    /* Checks user parameters */
+    if (!access_ok(VERIFY_READ, function, sizeof(function)) || !access_ok(VERIFY_WRITE, stack, sizeof(stack))) {
+        system_to_user();        
+         return -EFAULT;
+    }
+ 
+    /* Returns error if there isn't any available task in the free queue */
+    if (list_empty(&freequeue)) {
+        system_to_user();
+        return -EAGAIN;
+    }
+ 
+    /* Needed variables related to child and parent processes */
+    struct list_head *free_pcb = list_first(&freequeue);
+    union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
+    union task_union *parent = (union task_union *)current();
+    struct task_struct *pcb_child = &(child->task);
+ 
+    list_del(free_pcb);
+ 
+    /* Inherits system code+data */
+    copy_data(parent, child, sizeof(union task_union));
+ 
+    /* Updates references for child's page directory, inherited by parent */
+    update_DIR_refs(pcb_child);
+ 
+    /* Updates child's PCB (only the ones that the child process does not inherit) */
+   
+    pcb_child->PID = ++global_PID;
+    pcb_child->status = ST_READY;
+ 
+    /* Prepares the return of child process. It must return 0
+     * and its kernel_esp must point to the top of the stack
+     */
+    unsigned int ebp;
+    __asm__ __volatile__(
+        "mov %%ebp,%0\n"
+        :"=g"(ebp)
+    );
+ 
+    unsigned int stack_stride = (ebp - (unsigned int)parent)/sizeof(unsigned long);
+ 
+    /* Dummy value for ebp for the child process */
+    child->stack[stack_stride-1] = 0;
+ 
+    child->stack[stack_stride] = (unsigned long)&ret_from_fork;
+ 
+    child->task.kernel_esp = &child->stack[stack_stride-1];
+ 
+    /* Modifies ebp with the address of the new stack */
+    child->stack[stack_stride+7] = (unsigned long)stack;
+ 
+    /* Modifies eip with the address of the new code (function) to execute */
+    child->stack[stack_stride+13] = (unsigned long)function;
+ 
+    /* Modifies esp with the address of the new stack */
+    child->stack[stack_stride+16] = (unsigned long)stack;
+ 
+    /* Adds child process to ready queue and returns its PID from parent */
+    list_add_tail(&(pcb_child->list), &readyqueue);
+ 
+    /* If current process is idle, immediately removes from the CPU */
+    if (current()->PID == 0) sched_next_rr();
+ 
+    system_to_user();
+
+    return child->task.PID;
+}
 
 void sys_exit()
 {
@@ -164,13 +236,20 @@ void sys_exit()
 
     /*Free the data structures and resources of this process*/
     for (i = 0; i < NUM_PAG_DATA; i++)
-      {
+    {
         /*allibarem els phisical_mem del process*/
         free_frame(get_frame(process_PT, PAG_LOG_INIT_DATA+i));
         /*Allibarem les pagines logiques del proces*/
         del_ss_pag(process_PT, PAG_LOG_INIT_DATA+i);
-        }
+     }
 
+    for (i = 0; i < NR_SEMS; i++) 
+    {
+        if (sems[i].owner_pid == current()->PID) {
+            sys_sem_destroy(i);
+        }
+    }
+    
     /*reset PID*/
     current()-> PID = -1;
 
@@ -201,10 +280,14 @@ int sys_write(int fd, char * buffer, int size)
   //the number of bytes written if OK.
 }
 
+
 int sys_gettime()
 {
+    user_to_system();
+    system_to_user();
 	return zeos_ticks;
 }
+
 
 void user_to_system(void)
 {
@@ -216,14 +299,6 @@ void system_to_user(void)
   update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
 }
 
-int sys_clone(void (*function) (void), void *stack)
-{
-
-	//ret -ERROR if !OK
-
-	//ret PID if OK
-	return 0;
-}
 
 int sys_get_stats(int pid, struct stats *st)
 {
@@ -307,7 +382,7 @@ int sys_sem_wait(int n_sem)
 
 int sys_sem_signal(int n_sem)
 {
-        user_to_system();
+     user_to_system();
 
     /* Check user parameters */
     if (n_sem < 0 || n_sem >= NR_SEMS || sems[n_sem].owner_pid == -1) {

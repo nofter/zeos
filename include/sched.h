@@ -11,7 +11,7 @@
 #include <mm_address.h>
 #include <stats.h>
 #include <utils.h>
-#include<semaphore.h>
+#include <semaphore.h>
 
 #define INITIAL_ESP       	KERNEL_ESP(&task[1])
 #define NR_TASKS      10
@@ -49,6 +49,17 @@ extern struct list_head readyqueue;
 
 extern struct sem_t sems[NR_SEMS];
 
+
+
+/* TODO: Would be better to define this in include/mm.h and using
+ * __attribute__((__section__(".data.task"))); ?
+ */
+extern int dir_pages_refs[NR_TASKS];
+ 
+/* Useful macro to manipulates directory pages references */
+#define POS_TO_DIR_PAGES_REFS(p_dir)                        \
+    (int)(((unsigned long)p_dir - (unsigned long)(&dir_pages[0][0])) / (sizeof(dir_pages[0]))) \
+ 
 /* Inicialitza les dades del proces inicial */
 
 void init_task1(void);
@@ -66,6 +77,7 @@ void inner_task_switch(union task_union* inner_new);
 struct task_struct *list_head_to_task_struct(struct list_head *l);
 
 int allocate_DIR(struct task_struct *t);
+void update_DIR_refs(struct task_struct *t);
 
 page_table_entry * get_PT (struct task_struct *t) ;
 
