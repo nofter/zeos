@@ -83,17 +83,19 @@ page_table_entry * get_PT (struct task_struct *t) ;
 
 page_table_entry * get_DIR (struct task_struct *t) ;
 
+void schedule();
+
 /* Headers for the scheduling policy */
 void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
 void update_sched_data_rr();
 int needs_sched_rr();
 
-/*headers del quantum*/
+/* Headers del quantum */
 int get_quantum (struct task_struct *t);
 void set_quantum (struct task_struct *t, int new_quantum);
 
-/*Headers dels stats*/
+/* Headers dels stats */
 void init_stats(struct stats *s);
 void update_stats(unsigned long *sys_ticks, unsigned long *elapsed);
 #endif  /* __SCHED_H__ */

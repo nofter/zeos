@@ -17,6 +17,8 @@
 
 #include <system.h>
 
+#include <sys.h>
+
 #include <stats.h>
 
 #include<semaphore.h>
@@ -25,8 +27,17 @@
 #define LECTURA 0
 #define ESCRIPTURA 1
 
+// VARS //
+
 int global_PID = 1000;
 extern int remaining_quantum;
+
+
+// SYSCALL DECLARATIONS (avoiding warnings) //
+
+int sys_sem_destroy(int n_sem);
+
+// HELPERS //
 
 int check_fd(int fd, int permissions)
 {
@@ -34,6 +45,19 @@ int check_fd(int fd, int permissions)
   if (permissions!=ESCRIPTURA) return -13; /*EACCES*/
   return 0;
 }
+
+void user_to_system(void)
+{
+  update_stats(&(current()->p_stats.user_ticks), &(current()->p_stats.elapsed_total_ticks));
+}
+
+void system_to_user(void)
+{
+  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+}
+
+
+// SYSCALLS //
 
 int sys_ni_syscall()
 {
@@ -49,10 +73,13 @@ int ret_from_fork(){
   return 0;
 }
 
+// TODO - Clean
 //struct list_head readyqueue;
 
 int sys_fork()
 {
+// TODO - Delete printk
+//printk("\nfork...");
 
     user_to_system();
     unsigned int i;
@@ -156,6 +183,9 @@ int sys_fork()
 
 int sys_clone(void (*function) (void), void *stack)
 {
+// TODO - Delete printk
+//printk("\nclone...");
+
      user_to_system();
 
     /* Checks user parameters */
@@ -169,15 +199,15 @@ int sys_clone(void (*function) (void), void *stack)
         system_to_user();
         return -EAGAIN;
     }
- 
+
     /* Needed variables related to child and parent processes */
     struct list_head *free_pcb = list_first(&freequeue);
     union task_union *child = (union task_union*)list_head_to_task_struct(free_pcb);
     union task_union *parent = (union task_union *)current();
     struct task_struct *pcb_child = &(child->task);
- 
+
     list_del(free_pcb);
- 
+
     /* Inherits system code+data */
     copy_data(parent, child, sizeof(union task_union));
  
@@ -229,9 +259,16 @@ int sys_clone(void (*function) (void), void *stack)
 
 void sys_exit()
 {
+// TODO - Delete printk
+//printk("\nexit...");
+
     int i;
 
-    /*Aconseguim les taula de pagines del process*/
+// TODO - CHECK IF (invariant - do not free process PCB nor memory if cloned)
+if (--dir_pages_refs[POS_TO_DIR_PAGES_REFS(get_DIR(current()))]==0)
+{
+
+    /*Aconseguim la taula de pagines del process*/
     page_table_entry *process_PT = get_PT(current());
 
     /*Free the data structures and resources of this process*/
@@ -243,13 +280,14 @@ void sys_exit()
         del_ss_pag(process_PT, PAG_LOG_INIT_DATA+i);
      }
 
+// TODO  - CHECK BEHAVIOUR (if cloned)
     for (i = 0; i < NR_SEMS; i++) 
     {
         if (sems[i].owner_pid == current()->PID) {
             sys_sem_destroy(i);
         }
     }
-    
+}   
     /*reset PID*/
     current()-> PID = -1;
 
@@ -283,25 +321,20 @@ int sys_write(int fd, char * buffer, int size)
 
 int sys_gettime()
 {
+// TODO - Delete printk
+//printk("\ngettime...");
+
     user_to_system();
     system_to_user();
 	return zeos_ticks;
 }
 
 
-void user_to_system(void)
-{
-  update_stats(&(current()->p_stats.user_ticks), &(current()->p_stats.elapsed_total_ticks));
-}
-
-void system_to_user(void)
-{
-  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
-}
-
-
 int sys_get_stats(int pid, struct stats *st)
 {
+// TODO - Delete printk
+//printk("\nget_stats...");
+
   int i;
 
   if (!access_ok(VERIFY_WRITE, st, sizeof(struct stats))) return -EFAULT;
@@ -322,11 +355,13 @@ int sys_get_stats(int pid, struct stats *st)
 
 int sys_sem_init(int n_sem, unsigned int value)
 {
+// TODO - Delete printk
+//printk("\nsem_init...");
     user_to_system();
 
     /* Check user parameters */
     if (n_sem < 0 || n_sem >= NR_SEMS) {
-        system_to_user();;
+        system_to_user();
         return -EINVAL;
     }
 
@@ -355,14 +390,14 @@ int sys_sem_wait(int n_sem)
     }
 
     if (sems[n_sem].count > 0){
-
         --sems[n_sem].count;
-
     }else {
-
         struct list_head *semqueue = &(sems[n_sem].semqueue);
         struct list_head *curr_task = &(current()->list);
-        list_del(curr_task);
+// TODO - UNCOMMENTING THIS GENERATES A PAGE FAULT
+	//printk("\nsem_waitA...");
+	//list_del(curr_task);
+	//printk("\nsem_waitB...");
         current()->status = ST_BLOCKED;
         list_add_tail(curr_task, semqueue);
         system_to_user();
@@ -371,7 +406,7 @@ int sys_sem_wait(int n_sem)
 
     /* Assures that the semaphore was destroyed while the process is blocked */
     if (sems[n_sem].owner_pid == -1) {
-        system_to_user();;
+        system_to_user();
         return -EPERM;
     }
 
@@ -382,6 +417,9 @@ int sys_sem_wait(int n_sem)
 
 int sys_sem_signal(int n_sem)
 {
+// TODO - Delete printk
+//printk("\nsem_signal...");
+
      user_to_system();
 
     /* Check user parameters */
@@ -411,9 +449,10 @@ int sys_sem_signal(int n_sem)
     return 0;
 }
 
-
 int sys_sem_destroy(int n_sem)
 {
+// TODO - Delete printk
+//printk("\ndestroy...");
     user_to_system();
 
     /* Check user parameters */
@@ -422,6 +461,7 @@ int sys_sem_destroy(int n_sem)
         return -EINVAL;
     }
 
+    /* Check permisions */
     if (sems[n_sem].owner_pid != current()->PID) {
         system_to_user();
         return -EPERM;
@@ -441,3 +481,4 @@ int sys_sem_destroy(int n_sem)
     system_to_user();
     return 0;
 }
+
