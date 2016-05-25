@@ -17,7 +17,8 @@ int sys_read_keyboard(char *buf, int count){
     int check;
     current()->info_key.toread = count;
     current()->info_key.buffer = buf;
-    if (list_empty(&keyboardqueue)) {  
+
+    if (list_empty(&keyboardqueue)) {  //no other process waiting for keyboard input
         if (count <= q) {		//enough keyboard stuff to read
             int tmp = minim(BUFF_SIZE - p, count);
             check = copy_to_user(&keyboardbuffer[p], buf, tmp);
@@ -34,7 +35,7 @@ int sys_read_keyboard(char *buf, int count){
             current()->info_key.toread = 0;
             current()->info_key.buffer =  NULL;
         }
-        else {
+        else {				// not enough characters to satisfy first blocked process IO -> read + reblock
             while (current()->info_key.toread > 0) {
                 int tmp = minim(BUFF_SIZE - p, q);
                 tmp = minim(tmp, current()->info_key.toread);
@@ -52,15 +53,15 @@ int sys_read_keyboard(char *buf, int count){
     
                 current()->info_key.toread -= tmp;
                 current()->info_key.buffer = &(current()->info_key.buffer[tmp]);
-	    	    update_process_state_rr(current(), &keyboardqueue);
+	    	update_process_state_rr(current(), &keyboardqueue);	// TODO -> reblock must be to keyboardqueue head to keep reads order
                 sched_next_rr();
             }
         }
     }
-    else {
-		current()->info_key.buffer = buf;
+    else {		// other prioritary processes blocked (waiting) in keyboardqueue
+	current()->info_key.buffer = buf;
         current()->info_key.toread = count;
-		update_process_state_rr(current(), &keyboardqueue);
+	update_process_state_rr(current(), &keyboardqueue);	// block current to keyboardqueue tail ¿?
         sched_next_rr();
         while (current()->info_key.toread > 0) {
                 int tmp = minim(BUFF_SIZE - p, q);
@@ -79,7 +80,7 @@ int sys_read_keyboard(char *buf, int count){
     
                 current()->info_key.toread -= tmp;
                 current()->info_key.buffer = &(current()->info_key.buffer[tmp]);
-	    	    update_process_state_rr(current(), &keyboardqueue);
+	    	update_process_state_rr(current(), &keyboardqueue);
                 sched_next_rr();
             }
     }

@@ -24,9 +24,10 @@
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
+
 struct infKey {
     char *buffer;
-    int toread;
+    int toread;	// key amount left to read
 };
 
 struct task_struct {

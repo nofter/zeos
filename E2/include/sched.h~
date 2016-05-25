@@ -97,6 +97,7 @@ void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
 void update_sched_data_rr();
 int needs_sched_rr();
+void update_current_state_rr(struct list_head *dest);
 
 /* Headers del quantum */
 int get_quantum (struct task_struct *t);
