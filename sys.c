@@ -45,6 +45,13 @@ int check_fd(int fd, int permissions)
   return 0;
 }
 
+int check_fd_read(int fd, int permissions)
+{
+  if (fd!=0) return -9; /*EBADF*/
+  if (permissions!=LECTURA) return -13; /*EACCES*/
+  return 0;
+}
+
 void user_to_system(void)
 {
   update_stats(&(current()->p_stats.user_ticks), &(current()->p_stats.elapsed_total_ticks));
@@ -343,14 +350,14 @@ if (--dir_pages_refs[POS_TO_DIR_PAGES_REFS(get_DIR(current()))]==0)
 int sys_read(int fd, char * buf, int count)
 {
 	int nok, res;
-//fd: file descriptor. In this delivery it must always be 1.
-	if((nok = check_fd(fd,LECTURA))) return nok;
 //buffer: pointer to the bytes.
 	if(buf == NULL) return -EFAULT;
+//fd: file descriptor. In this delivery it must always be 1.
+	if((nok = check_fd_read(fd,LECTURA))) return -EBADF;
 //size: number of bytes.
 	if (count<0) return -EINVAL;	//TODO Take into account count == 0 case ¿? - also in write
 
-	if (!access_ok(VERIFY_READ, buf, count)) return -EFAULT;
+	if (!access_ok(VERIFY_WRITE, buf, count)) return -EFAULT;
 
 	res = sys_read_keyboard(buf, count);
 
@@ -371,7 +378,7 @@ int sys_write(int fd, char * buffer, int size)
 //size: number of bytes.
 	if (size<0) return -EINVAL;
 
-	if (!access_ok(VERIFY_WRITE, buffer, size)) return -EFAULT;
+	if (!access_ok(VERIFY_READ, buffer, size)) return -EFAULT;
 
 	res = sys_write_console(buffer, size);
 
