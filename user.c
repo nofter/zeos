@@ -18,46 +18,4 @@ int __attribute__ ((__section__(".text.main")))
 
      runjp(); while(1);
 
-/*int a = fork();
-if (a==0){
-     runjp(); while(1);
-    while(1){int valor2 = getpid();
-    itoa(valor2,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);}
-}
-else{ while(1){int valor2 = getpid();
-    itoa(valor2,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);};}*/
-
-    //int a = fork();    a= fork();
-
-/*    int valor = gettime();
-    itoa(valor,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);
-
-    int valor2 = getpid();
-    itoa(valor2,buff2);
-    write(1, buff2, sizeof(buff2));
-    write(1, "  ", 3);
-
-    int valor3 = get_stats(valor2, &st);
-    itoa(st.elapsed_total_ticks,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);
-    itoa(st.user_ticks,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);
-    itoa(st.system_ticks,buff);
-    write(1, buff, sizeof(buff));
-    write(1, "  ", 3);
-    write(1, "\n", 2);
-
-    if(getpid()==1)
-    if (gettime()!=0 && gettime()%1000 ==0){
-      fork();
-    }
-*/
 }

@@ -73,13 +73,10 @@ int ret_from_fork(){
   return 0;
 }
 
-// TODO - Clean
-//struct list_head readyqueue;
+
 
 int sys_fork()
 {
-// TODO - Delete printk
-//printk("\nfork...");
 
     user_to_system();
     unsigned int i;
@@ -183,8 +180,6 @@ int sys_fork()
 
 int sys_clone(void (*function) (void), void *stack)
 {
-// TODO - Delete printk
-//printk("\nclone...");
 
      user_to_system();
 
@@ -321,8 +316,6 @@ int sys_write(int fd, char * buffer, int size)
 
 int sys_gettime()
 {
-// TODO - Delete printk
-//printk("\ngettime...");
 
     user_to_system();
     system_to_user();
@@ -332,8 +325,7 @@ int sys_gettime()
 
 int sys_get_stats(int pid, struct stats *st)
 {
-// TODO - Delete printk
-//printk("\nget_stats...");
+
 
   int i;
 
@@ -355,8 +347,7 @@ int sys_get_stats(int pid, struct stats *st)
 
 int sys_sem_init(int n_sem, unsigned int value)
 {
-// TODO - Delete printk
-//printk("\nsem_init...");
+
     user_to_system();
 
     /* Check user parameters */
@@ -394,10 +385,6 @@ int sys_sem_wait(int n_sem)
     }else {
         struct list_head *semqueue = &(sems[n_sem].semqueue);
         struct list_head *curr_task = &(current()->list);
-// TODO - UNCOMMENTING THIS GENERATES A PAGE FAULT
-	//printk("\nsem_waitA...");
-	//list_del(curr_task);
-	//printk("\nsem_waitB...");
         current()->status = ST_BLOCKED;
         list_add_tail(curr_task, semqueue);
         system_to_user();
@@ -417,8 +404,6 @@ int sys_sem_wait(int n_sem)
 
 int sys_sem_signal(int n_sem)
 {
-// TODO - Delete printk
-//printk("\nsem_signal...");
 
      user_to_system();
 
@@ -451,8 +436,7 @@ int sys_sem_signal(int n_sem)
 
 int sys_sem_destroy(int n_sem)
 {
-// TODO - Delete printk
-//printk("\ndestroy...");
+
     user_to_system();
 
     /* Check user parameters */
