@@ -5,14 +5,14 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall	//00
 	.long sys_exit      	//01
 	.long sys_fork      	//02
-	.long sys_read	//03
-	.long sys_write				//04
+	.long sys_read			//03
+	.long sys_write			//04
 	.long sys_ni_syscall	//05
 	.long sys_ni_syscall	//06
 	.long sys_ni_syscall	//07
 	.long sys_ni_syscall	//08
 	.long sys_ni_syscall	//09
-	.long sys_gettime			//10
+	.long sys_gettime		//10
 	.long sys_ni_syscall	//11
 	.long sys_ni_syscall	//12
 	.long sys_ni_syscall	//13
@@ -21,10 +21,10 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall	//16
 	.long sys_ni_syscall	//17
 	.long sys_ni_syscall	//18
-	.long sys_clone				//19
+	.long sys_clone			//19
 	.long sys_getpid    	//20
-	.long sys_sem_init    //21
-	.long sys_sem_wait	  //22
+	.long sys_sem_init   	//21
+	.long sys_sem_wait	  	//22
 	.long sys_sem_signal	//23
 	.long sys_sem_destroy	//24
 	.long sys_ni_syscall	//25
@@ -33,7 +33,7 @@ ENTRY (sys_call_table)
 	.long sys_ni_syscall	//28
 	.long sys_ni_syscall	//29
 	.long sys_ni_syscall	//30
-	.long sys_ni_syscall  //31
+	.long sys_ni_syscall  	//31
 	.long sys_ni_syscall	//32
 	.long sys_ni_syscall	//33
 	.long sys_ni_syscall	//34

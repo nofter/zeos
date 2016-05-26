@@ -146,7 +146,7 @@ int sys_fork()
 
 
     /* Heap region copy management from parent to child */
-    unsigned long heap_break = (unsigned long)(pcb_parent->heap_break);
+    unsigned long heap_break = (unsigned long)(current()->heap_break);
     int num_heap_frames = (heap_break / PAGE_SIZE) - HEAPSTART + (heap_break % PAGE_SIZE != 0);
 
     /* Reserve free frames (physical memory) to allocate child's heap region */
@@ -157,8 +157,8 @@ int sys_fork()
         /* If there is no enough free frames, those reserved thus far must be freed */
         if ((resv_heap_frames[i] = alloc_frame()) == -1) {
             while (i >= 0) free_frame(resv_heap_frames[i--]);
-            list_add_tail(&(pcb_child->list), &freequeue);
-            update_stats(current(), RSYS_TO_RUSER);
+            list_add_tail(free_pcb, &freequeue);
+            system_to_user();
             return -ENOMEM;
         }
     }
@@ -548,7 +548,8 @@ int sys_sem_destroy(int n_sem)
 
 void *sys_sbrk(int increment)
 {
-    update_stats(current(), RUSER_TO_RSYS);
+    user_to_system();
+    //update_stats(current(), RUSER_TO_RSYS);
 
     struct task_struct *curr_task_pcb = current();
     void *ret = (void *)curr_task_pcb->heap_break;
@@ -571,7 +572,8 @@ void *sys_sbrk(int increment)
                 /* If there is no enough free frames, those reserved thus far must be freed */
                 if ((resv_heap_frames[i] = alloc_frame()) == -1) {
                     while (i >= 0) free_frame(resv_heap_frames[i--]);
-                    update_stats(current(), RSYS_TO_RUSER);
+                    system_to_user();
+                    //update_stats(current(), system_to_user());
                     return -ENOMEM;
                 }
             }
@@ -615,6 +617,7 @@ void *sys_sbrk(int increment)
     }
 
     set_cr3(get_DIR(curr_task_pcb));
-    update_stats(current(), RSYS_TO_RUSER);
+    system_to_user();
+    //update_stats(current(), RSYS_TO_RUSER);
     return ret;
 }

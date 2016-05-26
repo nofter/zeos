@@ -7,13 +7,21 @@ char buff[24];
 char buff2[24];
 int pid;
 
-// JP FUNC DECLARATION (avoiding warnings) //
-void runjp();
+
 
 
 int __attribute__ ((__section__(".text.main")))
   main(void)
 {
+
+    runjp();
+
+    while(1);
+    
+    return 0;
+}
+
+
     /* Next line, tries to move value 0 to CR3 register. This register is a privileged one, and so it will raise an exception */
      /* __asm__ __volatile__ ("mov %0, %%cr3"::"r" (0) ); */
 
@@ -62,8 +70,5 @@ else{ while(1){int valor2 = getpid();
     /*if(getpid()==1)
     if (gettime()!=0 && gettime()%100 ==0){
       fork();
-	read(1, buff2, 4);
+    read(1, buff2, 4);
     }*/
-//}
-
-}

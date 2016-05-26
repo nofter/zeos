@@ -263,14 +263,20 @@ int get_stats(int pid, struct stats *st)
  */
 void *sbrk(int increment)
 {
-    int ret;
+    int result;
     __asm__ __volatile__(
         "int $0x80\n"
-        : "=a" (ret)
+        : "=a" (result)
         : "b" (increment), "a" (0x0F)
     );
+  if (result<0)
+  {
+    errno = -result;
+    return -1;
+  }
+  errno=0;
+  return result;
 
-    SET_ERRNO_RETURN
 }
 
 

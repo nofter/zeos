@@ -247,6 +247,7 @@ void init_task1(void)
   task1->info_key.toread = 0;
   task1->info_key.buffer =  NULL;
   set_quantum(task1, DEFAULT_QUANTUM);
+  task1->heap_break = (unsigned long *)(HEAPSTART * PAGE_SIZE);
   remaining_quantum = get_quantum(task1);
   init_stats(&task1->p_stats);
   /*Initialize field dir_pages_baseAaddr*/

@@ -33,11 +33,12 @@ struct infKey {
 struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
-  int PID;			/* Process ID. This MUST be the first field of the struct. */
-  unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
+  int PID;			              /* Process ID. This MUST be the first field of the struct. */
+  unsigned long* kernel_esp;  /*"stackpointer(unsigned long)/register(DWord)" type*/
   enum state_t status;
-  int total_quantum;		/* Total quantum of the process */
-  struct stats p_stats;		/* Process stats */
+  int total_quantum;		      /* Total quantum of the process */
+  struct stats p_stats;		    /* Process stats */
+  char *heap_break;           /*heap del sbrk*/
 
   struct infKey info_key;
 };
@@ -48,7 +49,7 @@ union task_union {
 };
 
 extern union task_union protected_tasks[NR_TASKS+2];
-extern union task_union *task; /* Vector de tasques */
+extern union task_union *task;              /* Vector de tasques */
 extern struct task_struct *idle_task;
 
 
