@@ -99,12 +99,40 @@ void setIdt()
 }
 
 
-void keyboard_routine()
+char keyboardbuffer[];
+
+void IO_keyboard_mgmt(char c) {
+// TODO estalviarse afegir tecla si keyboardqueue esta buida ¿?
+  if (BUFF_SIZE > q) {  //hi ha espai al buffer circular -> introduir lletra
+    keyboardbuffer[(p + q)%BUFF_SIZE] = c;
+    ++q;
+  }  //else {la lletra introduida es perd}
+  if (!list_empty(&keyboardqueue)) {  //process esperant input
+    struct list_head * lh = list_first(&keyboardqueue);
+    struct task_struct *tsk = list_head_to_task_struct(lh);
+    tsk->status = ST_READY;
+    list_del(lh);        
+    list_add_tail(lh, &readyqueue);
+  }
+}
+
+
+// OLD KEYBOARD ROUTINE - TODO Delete
+/*void keyboard_routine()
 {
   Byte lletra;
   lletra = inb(0x60);
   if (lletra & 0x80) printc_xy(10, 10, char_map[lletra&0x7f]);
+}*/
+
+void keyboard_routine() {
+  char lletra = inb(0x60);
+  if (((lletra & 0x80) == 0)) {	// TODO Bithack that as in OLD
+	//hardcoded IO for every key press
+    IO_keyboard_mgmt(char_map[lletra&0x7f]);	// TODO IMPORTANT Beware or the almighty '\0'
+  }
 }
+
 
 void clock_routine()
 {

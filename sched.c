@@ -21,10 +21,13 @@ union task_union *task = &protected_tasks[1]; /* == union task_union task[NR_TAS
 extern struct list_head blocked;
 struct list_head freequeue;
 struct list_head readyqueue;
+struct list_head keyboardqueue;
 
 struct task_struct *idle_task;
 
 struct sem_t sems[NR_SEMS];
+
+int p, q;
 
 void init_stats(struct stats *s)
 {
@@ -190,6 +193,11 @@ void init_sems()
     }
 }
 
+void init_keyboard(void) {
+    INIT_LIST_HEAD(&keyboardqueue);
+    q = 0;
+    p = 0;
+}
 
 int get_quantum (struct task_struct *t)
 {
@@ -210,6 +218,8 @@ void init_idle (void)
     list_del(first);
     /*Assign PID 0 to the process*/
     i_task->PID = 0;
+    i_task->info_key.toread = 0;
+    i_task->info_key.buffer =  NULL;
     /*Initialize field dir_pages_baseAaddr*/
     allocate_DIR(i_task);
     /*Initialize an execution context for the procees*/
@@ -234,6 +244,8 @@ void init_task1(void)
   /*Assign PID 1*/
   task1->PID = 1;
   task1->status=ST_RUN;
+  task1->info_key.toread = 0;
+  task1->info_key.buffer =  NULL;
   set_quantum(task1, DEFAULT_QUANTUM);
   remaining_quantum = get_quantum(task1);
   init_stats(&task1->p_stats);
@@ -252,8 +264,8 @@ void init_sched()
 {
 	init_freequeue();
 	init_readyqueue();
-  /* Initializes array of semaphores */
-  init_sems();
+	init_sems(); //Initializes array of semaphores
+	init_keyboard();
   remaining_quantum = DEFAULT_QUANTUM;
 }
 
@@ -344,3 +356,23 @@ void sched_next_rr(void)
 
   task_switch((union task_union*)t);
 }
+
+/*void update_current_state_rr(struct list_head *dest) {
+  struct task_struct * curr = current();
+  struct list_head * lh = &curr->list;
+    curr->estats.system_ticks += get_ticks()-tsk->estats.elapsed_total_ticks;
+    curr->estats.elapsed_total_ticks = get_ticks();
+    curr->estat = ST_BLOCKED;
+  list_add_tail(lh, dest);
+}*/
+
+void block(struct list_head * process, struct list_head * dst_queue) {
+    list_add_tail(process, dst_queue);
+    sched_next_rr();
+}
+
+void unblock(struct list_head * process) {
+    list_del(process);
+    list_add(process, &readyqueue);
+}
+

@@ -24,6 +24,12 @@
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
+
+struct infKey {
+    char *buffer;
+    int toread;	// key amount left to read
+};
+
 struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
@@ -32,6 +38,8 @@ struct task_struct {
   enum state_t status;
   int total_quantum;		/* Total quantum of the process */
   struct stats p_stats;		/* Process stats */
+
+  struct infKey info_key;
 };
 
 union task_union {
@@ -46,9 +54,9 @@ extern struct task_struct *idle_task;
 
 extern struct list_head freequeue;
 extern struct list_head readyqueue;
+extern struct list_head keyboardqueue;
 
 extern struct sem_t sems[NR_SEMS];
-
 
 
 /* TODO: Would be better to define this in include/mm.h and using
@@ -90,6 +98,7 @@ void sched_next_rr();
 void update_process_state_rr(struct task_struct *t, struct list_head *dest);
 void update_sched_data_rr();
 int needs_sched_rr();
+void update_current_state_rr(struct list_head *dest);
 
 /* Headers del quantum */
 int get_quantum (struct task_struct *t);
@@ -98,4 +107,8 @@ void set_quantum (struct task_struct *t, int new_quantum);
 /* Headers dels stats */
 void init_stats(struct stats *s);
 void update_stats(unsigned long *sys_ticks, unsigned long *elapsed);
+
+/* blocking/unblock management functions */
+void block(struct list_head * process, struct list_head * dst_queue);
+void unblock(struct list_head * process);
 #endif  /* __SCHED_H__ */

@@ -16,6 +16,8 @@ void exit();
 
 int fork();
 
+int read(int fd, char *buf, int count);
+
 int write(int fd, char *buffer, int size);
 
 int gettime();

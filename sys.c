@@ -23,7 +23,6 @@
 
 #include<semaphore.h>
 
-
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -73,10 +72,13 @@ int ret_from_fork(){
   return 0;
 }
 
-
+// TODO - Clean
+//struct list_head readyqueue;
 
 int sys_fork()
 {
+// TODO - Delete printk
+//printk("\nfork...");
 
     user_to_system();
     unsigned int i;
@@ -150,6 +152,8 @@ int sys_fork()
     child->task.PID = ++global_PID;
     init_stats(&(child->task.p_stats));
     child->task.status = ST_READY;
+    child->task.info_key.toread = 0;
+    child->task.info_key.buffer =  NULL;
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -180,6 +184,8 @@ int sys_fork()
 
 int sys_clone(void (*function) (void), void *stack)
 {
+// TODO - Delete printk
+//printk("\nclone...");
 
      user_to_system();
 
@@ -213,7 +219,9 @@ int sys_clone(void (*function) (void), void *stack)
    
     pcb_child->PID = ++global_PID;
     pcb_child->status = ST_READY;
- 
+    pcb_child->info_key.toread = 0;
+    pcb_child->info_key.buffer =  NULL;
+
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
      */
@@ -294,9 +302,30 @@ if (--dir_pages_refs[POS_TO_DIR_PAGES_REFS(get_DIR(current()))]==0)
 }
 
 
+int sys_read(int fd, char * buf, int count)
+{
+	int nok, res;
+//fd: file descriptor. In this delivery it must always be 1.
+	if((nok = check_fd(fd,LECTURA))) return nok;
+//buffer: pointer to the bytes.
+	if(buf == NULL) return -EFAULT;
+//size: number of bytes.
+	if (count<0) return -EINVAL;	//TODO Take into account count == 0 case ¿? - also in write
+
+	if (!access_ok(VERIFY_READ, buf, count)) return -EFAULT;
+
+	res = sys_read_keyboard(buf, count);
+
+	return res;
+  //return ’ Negative number in case of error (specifying the kind of error) and
+  //the number of bytes written if OK.
+
+}
+
+
 int sys_write(int fd, char * buffer, int size)
 {
-	int nok/*, noaccess*/, res;
+	int nok, res;
 //fd: file descriptor. In this delivery it must always be 1.
 	if((nok = check_fd(fd,ESCRIPTURA))) return nok;
 //buffer: pointer to the bytes.
@@ -304,7 +333,7 @@ int sys_write(int fd, char * buffer, int size)
 //size: number of bytes.
 	if (size<0) return -EINVAL;
 
-	//if (noaccess = access_ok(VERIFY_WRITE, buffer, size) return -EFAULT;
+	if (!access_ok(VERIFY_WRITE, buffer, size)) return -EFAULT;
 
 	res = sys_write_console(buffer, size);
 
@@ -316,6 +345,8 @@ int sys_write(int fd, char * buffer, int size)
 
 int sys_gettime()
 {
+// TODO - Delete printk
+//printk("\ngettime...");
 
     user_to_system();
     system_to_user();
@@ -325,7 +356,8 @@ int sys_gettime()
 
 int sys_get_stats(int pid, struct stats *st)
 {
-
+// TODO - Delete printk
+//printk("\nget_stats...");
 
   int i;
 
@@ -347,7 +379,8 @@ int sys_get_stats(int pid, struct stats *st)
 
 int sys_sem_init(int n_sem, unsigned int value)
 {
-
+// TODO - Delete printk
+//printk("\nsem_init...");
     user_to_system();
 
     /* Check user parameters */
@@ -385,6 +418,10 @@ int sys_sem_wait(int n_sem)
     }else {
         struct list_head *semqueue = &(sems[n_sem].semqueue);
         struct list_head *curr_task = &(current()->list);
+// TODO - UNCOMMENTING THIS GENERATES A PAGE FAULT
+	//printk("\nsem_waitA...");
+	//list_del(curr_task);
+	//printk("\nsem_waitB...");
         current()->status = ST_BLOCKED;
         list_add_tail(curr_task, semqueue);
         system_to_user();
@@ -404,6 +441,8 @@ int sys_sem_wait(int n_sem)
 
 int sys_sem_signal(int n_sem)
 {
+// TODO - Delete printk
+//printk("\nsem_signal...");
 
      user_to_system();
 
@@ -436,7 +475,8 @@ int sys_sem_signal(int n_sem)
 
 int sys_sem_destroy(int n_sem)
 {
-
+// TODO - Delete printk
+//printk("\ndestroy...");
     user_to_system();
 
     /* Check user parameters */
