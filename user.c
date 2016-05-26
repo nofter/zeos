@@ -20,7 +20,7 @@ int __attribute__ ((__section__(".text.main")))
      //runjp(); while(1);
 //int i;
 //for (i=0; i<100; i++) write(1, "\n", 2);
-
+/*
 int a = fork();
 if (a==0){
      runjp(); while(1);
@@ -33,7 +33,7 @@ else{ while(1){int valor2 = getpid();
     itoa(valor2,buff);
     write(1, buff, sizeof(buff));
     write(1, "  ", 3);};}
-
+*/
     //int a = fork();    a= fork();
 //while(1){
 /*    int valor = gettime();

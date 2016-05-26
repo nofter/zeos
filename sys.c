@@ -145,6 +145,44 @@ int sys_fork()
     }
 
 
+    /* Heap region copy management from parent to child */
+    unsigned long heap_break = (unsigned long)(pcb_parent->heap_break);
+    int num_heap_frames = (heap_break / PAGE_SIZE) - HEAPSTART + (heap_break % PAGE_SIZE != 0);
+
+    /* Reserve free frames (physical memory) to allocate child's heap region */
+    int resv_heap_frames[num_heap_frames];
+
+    for (i = 0; i < num_heap_frames; i++) {
+
+        /* If there is no enough free frames, those reserved thus far must be freed */
+        if ((resv_heap_frames[i] = alloc_frame()) == -1) {
+            while (i >= 0) free_frame(resv_heap_frames[i--]);
+            list_add_tail(&(pcb_child->list), &freequeue);
+            update_stats(current(), RSYS_TO_RUSER);
+            return -ENOMEM;
+        }
+    }
+
+    /* Inherits heap region. Since each process has its own copy allocated in physical
+     * memory, it's needed to copy the heap region from parent process to the news
+     * reserved frames. First the page table entries from child process must be
+     * associated to the new reserved frames. Then the heap region copy is performed by
+     * modifying the logical adress space of the parent to points to reserved frames,
+     * then makes the copy of data, and finally deletes these new entries of parent's
+     * page table to deny the access to the child's heap region.
+     */
+    stride = PAGE_SIZE * num_heap_frames;
+    for (i = 0; i < num_heap_frames; i++) {
+        /* Associates a logical page from child's page table to physical reserved frame for heap region */
+        set_ss_pag(pagt_child, HEAPSTART+i, resv_heap_frames[i]);
+
+        /* Inherits one page of heap region */
+        unsigned int logic_addr = (i + HEAPSTART) * PAGE_SIZE;
+        set_ss_pag(pagt_parent, i + HEAPSTART + num_heap_frames, resv_heap_frames[i]);
+        copy_data((void *)(logic_addr), (void *)(logic_addr + stride), PAGE_SIZE);
+        del_ss_pag(pagt_parent, i + HEAPSTART + num_heap_frames);
+    }
+
     /* Flushes entire TLB */
     set_cr3(get_DIR(current()));
 

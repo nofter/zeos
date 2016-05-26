@@ -258,6 +258,22 @@ int get_stats(int pid, struct stats *st)
 }
 
 
+/* Wrapper for the system call *sys_sbrk(int increment).
+ * It has got the entry 15 (0x0F) in the system call table
+ */
+void *sbrk(int increment)
+{
+    int ret;
+    __asm__ __volatile__(
+        "int $0x80\n"
+        : "=a" (ret)
+        : "b" (increment), "a" (0x0F)
+    );
+
+    SET_ERRNO_RETURN
+}
+
+
 void perror()
 {
   //

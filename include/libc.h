@@ -28,6 +28,8 @@ int getpid();
 
 int get_stats(int pid, struct stats *st);
 
+void *sbrk(int increment);
+
 void perror();
 
 #endif  /* __LIBC_H__ */
