@@ -506,3 +506,77 @@ int sys_sem_destroy(int n_sem)
     return 0;
 }
 
+
+
+void *sys_sbrk(int increment)
+{
+    update_stats(current(), RUSER_TO_RSYS);
+
+    struct task_struct *curr_task_pcb = current();
+    void *ret = (void *)curr_task_pcb->heap_break;
+    unsigned long heap_break = (unsigned long)(curr_task_pcb->heap_break);
+    page_table_entry *curr_pagt = get_PT(curr_task_pcb);
+    int page_limit = (heap_break + increment) / PAGE_SIZE;
+    int i, num_heap_frames, extra_heap_frame, page_stride;
+    if (increment > 0) {
+
+        /* ((heap_break + increment) % PAGE_SIZE != 0) & (heap_break % PAGE_SIZE == 0)
+         * indicates if we need an extra frame for the heap dynaimc allocation
+         */
+        extra_heap_frame = ((heap_break + increment) % PAGE_SIZE != 0) & (heap_break % PAGE_SIZE == 0);
+        num_heap_frames = page_limit - (heap_break / PAGE_SIZE) + extra_heap_frame;
+
+        if (page_limit < TOTAL_PAGES && num_heap_frames > 0) {
+            int resv_heap_frames[num_heap_frames];
+            for (i = 0; i < num_heap_frames; i++) {
+
+                /* If there is no enough free frames, those reserved thus far must be freed */
+                if ((resv_heap_frames[i] = alloc_frame()) == -1) {
+                    while (i >= 0) free_frame(resv_heap_frames[i--]);
+                    update_stats(current(), RSYS_TO_RUSER);
+                    return -ENOMEM;
+                }
+            }
+
+            /* Shiftting one page if needed */
+            page_stride = (heap_break % PAGE_SIZE != 0);
+
+            for (i = 0; i < num_heap_frames; i++) {
+
+                /* (heap_break % PAGE_SIZE != 0) indicates if we need to associate
+                 * extra page in case when heap_break is not multiple of PAGE_SIZE
+                 */
+                set_ss_pag(curr_pagt, (heap_break / PAGE_SIZE) + i + page_stride, resv_heap_frames[i]);
+            }
+        }
+        curr_task_pcb->heap_break += increment;
+    }
+    else if (increment < 0) {
+        if (page_limit >= HEAPSTART) {
+
+            /* ((heap_break + increment) % PAGE_SIZE == 0) indicates
+            * if we need an extra frame for the heap dynaimc deallocation
+            */
+            extra_heap_frame = ((heap_break + increment) % PAGE_SIZE == 0);
+
+            num_heap_frames = (heap_break / PAGE_SIZE) - page_limit + extra_heap_frame;
+            curr_task_pcb->heap_break += increment;
+        }
+        else {
+            num_heap_frames = (heap_break / PAGE_SIZE) - HEAPSTART + 1;
+            curr_task_pcb->heap_break = HEAPSTART * PAGE_SIZE;
+        }
+
+        /* Shiftting one page if needed */
+        page_stride = (heap_break % PAGE_SIZE == 0);
+
+        for (i = 0; i < num_heap_frames; i++) {
+            free_frame(get_frame(curr_pagt, (heap_break / PAGE_SIZE) - i - page_stride));
+            del_ss_pag(curr_pagt, (heap_break / PAGE_SIZE) - i  - page_stride);
+        }
+    }
+
+    set_cr3(get_DIR(curr_task_pcb));
+    update_stats(current(), RSYS_TO_RUSER);
+    return ret;
+}
