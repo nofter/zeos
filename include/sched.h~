@@ -24,21 +24,15 @@
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
-struct infKey {
-    char *buffer;
-    int toread;
-};
-
 struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
-  int PID;			/* Process ID. This MUST be the first field of the struct. */
-  unsigned long* kernel_esp;		//"stackpointer(unsigned long)/register(DWord)" type
+  int PID;			              /* Process ID. This MUST be the first field of the struct. */
+  unsigned long* kernel_esp;  /*"stackpointer(unsigned long)/register(DWord)" type*/
   enum state_t status;
-  int total_quantum;		/* Total quantum of the process */
-  struct stats p_stats;		/* Process stats */
-
-  struct infKey info_key;
+  int total_quantum;		      /* Total quantum of the process */
+  struct stats p_stats;		    /* Process stats */
+  char *heap_break;           /*heap del sbrk*/
 };
 
 union task_union {
@@ -47,7 +41,7 @@ union task_union {
 };
 
 extern union task_union protected_tasks[NR_TASKS+2];
-extern union task_union *task; /* Vector de tasques */
+extern union task_union *task;              /* Vector de tasques */
 extern struct task_struct *idle_task;
 
 
@@ -108,6 +102,9 @@ void init_stats(struct stats *s);
 void update_stats(unsigned long *sys_ticks, unsigned long *elapsed);
 
 /* blocking/unblock management functions */
-void block(struct list_head * process, struct list_head * dst_queue);
-void unblock(struct list_head * process);
+//void block(struct list_head * process, struct list_head * dst_queue);
+//void unblock(struct list_head * process);
+void block_to_keyboardqueue(int endpoint);
+void unblock_from_keyboardqueue();
+
 #endif  /* __SCHED_H__ */

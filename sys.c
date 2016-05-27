@@ -23,6 +23,8 @@
 
 #include<semaphore.h>
 
+#include<keyboard.h>
+
 #define LECTURA 0
 #define ESCRIPTURA 1
 
@@ -58,6 +60,16 @@ void user_to_system(void)
 }
 
 void system_to_user(void)
+{
+  update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
+}
+
+/*void blocked_to_system(void)
+{
+  update_stats(&(current()->p_stats.blocked_ticks), &(current()->p_stats.elapsed_total_ticks));
+}*/
+
+void system_to_blocked(void)
 {
   update_stats(&(current()->p_stats.system_ticks), &(current()->p_stats.elapsed_total_ticks));
 }
@@ -197,8 +209,6 @@ int sys_fork()
     child->task.PID = ++global_PID;
     init_stats(&(child->task.p_stats));
     child->task.status = ST_READY;
-    child->task.info_key.toread = 0;
-    child->task.info_key.buffer =  NULL;
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -264,8 +274,6 @@ int sys_clone(void (*function) (void), void *stack)
    
     pcb_child->PID = ++global_PID;
     pcb_child->status = ST_READY;
-    pcb_child->info_key.toread = 0;
-    pcb_child->info_key.buffer =  NULL;
 
     /* Prepares the return of child process. It must return 0
      * and its kernel_esp must point to the top of the stack
@@ -349,6 +357,7 @@ if (--dir_pages_refs[POS_TO_DIR_PAGES_REFS(get_DIR(current()))]==0)
 
 int sys_read(int fd, char * buf, int count)
 {
+printk("\nread...");
 	int nok, res;
 //buffer: pointer to the bytes.
 	if(buf == NULL) return -EFAULT;

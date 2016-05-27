@@ -9,6 +9,7 @@
 #include <system.h>
 #include <sys.h>
 #include <charmap.h>
+#include <keyboard.h>
 
 #include <zeos_interrupt.h>
 
@@ -99,9 +100,7 @@ void setIdt()
 }
 
 
-char keyboardbuffer[];
-
-void IO_keyboard_mgmt(char c) {
+/*void IO_keyboard_mgmt(char c) {
 // TODO estalviarse afegir tecla si keyboardqueue esta buida ¿?
   if (BUFF_SIZE > q) {  //hi ha espai al buffer circular -> introduir lletra
     keyboardbuffer[(p + q)%BUFF_SIZE] = c;
@@ -115,7 +114,7 @@ void IO_keyboard_mgmt(char c) {
     list_del(lh);        
     list_add_tail(lh, &readyqueue);
   }
-}
+}*/
 
 
 // OLD KEYBOARD ROUTINE - TODO Delete
@@ -126,14 +125,33 @@ void IO_keyboard_mgmt(char c) {
   if (lletra & 0x80) printc_xy(10, 10, char_map[lletra&0x7f]);
 }*/
 
-void keyboard_routine() {
-  char lletra = inb(0x60);
-  if (((lletra & 0x80) == 0)) {	// TODO Bithack that as in OLD
-	//hardcoded IO for every key press
+void keyboard_routine()
+{
+    //update_stats(current(), RUSER_TO_RSYS);
+    user_to_system();
 
-    IO_keyboard_mgmt(char_map[lletra&0x7f]);	// TODO IMPORTANT Beware or the almighty '\0'
-  }
+    unsigned char key = inb(0x60);
+    if (key < 0x80) {
+        key = char_map[key];
+
+        int avail_keys = keyboard_buffer_avail();
+        if (avail_keys < KBD_BUFFER_SIZE) {
+            push_keyboard_buff(key);
+            avail_keys = keyboard_buffer_avail();
+        }
+        if (!list_empty(&keyboardqueue)) {
+            struct list_head *first = list_first(&keyboardqueue);
+            struct task_struct *task_to_unblock = list_head_to_task_struct(first);
+            int last_read_req = task_to_unblock->remainder_reads;
+            if (last_read_req <= avail_keys || avail_keys == KBD_BUFFER_SIZE) {
+                unblock_from_keyboardqueue();
+            }
+        }
+    }
+    //update_stats(current(), RSYS_TO_RUSER);
+    system_to_user();
 }
+
 
 
 void clock_routine()

@@ -24,12 +24,6 @@
 
 enum state_t { ST_RUN, ST_READY, ST_BLOCKED };
 
-
-struct infKey {
-    char *buffer;
-    int toread;	// key amount left to read
-};
-
 struct task_struct {
   page_table_entry * dir_pages_baseAddr;
   struct list_head list;
@@ -38,9 +32,8 @@ struct task_struct {
   enum state_t status;
   int total_quantum;		      /* Total quantum of the process */
   struct stats p_stats;		    /* Process stats */
+  unsigned int remainder_reads;
   char *heap_break;           /*heap del sbrk*/
-
-  struct infKey info_key;
 };
 
 union task_union {
@@ -110,6 +103,9 @@ void init_stats(struct stats *s);
 void update_stats(unsigned long *sys_ticks, unsigned long *elapsed);
 
 /* blocking/unblock management functions */
-void block(struct list_head * process, struct list_head * dst_queue);
-void unblock(struct list_head * process);
+//void block(struct list_head * process, struct list_head * dst_queue);
+//void unblock(struct list_head * process);
+void block_to_keyboardqueue(int endpoint);
+void unblock_from_keyboardqueue();
+
 #endif  /* __SCHED_H__ */

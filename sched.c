@@ -195,8 +195,6 @@ void init_sems()
 
 void init_keyboard(void) {
     INIT_LIST_HEAD(&keyboardqueue);
-    q = 0;
-    p = 0;
 }
 
 int get_quantum (struct task_struct *t)
@@ -218,8 +216,6 @@ void init_idle (void)
     list_del(first);
     /*Assign PID 0 to the process*/
     i_task->PID = 0;
-    i_task->info_key.toread = 0;
-    i_task->info_key.buffer =  NULL;
     /*Initialize field dir_pages_baseAaddr*/
     allocate_DIR(i_task);
     /*Initialize an execution context for the procees*/
@@ -244,8 +240,6 @@ void init_task1(void)
   /*Assign PID 1*/
   task1->PID = 1;
   task1->status=ST_RUN;
-  task1->info_key.toread = 0;
-  task1->info_key.buffer =  NULL;
   set_quantum(task1, DEFAULT_QUANTUM);
   task1->heap_break = (unsigned long *)(HEAPSTART * PAGE_SIZE);
   remaining_quantum = get_quantum(task1);
@@ -335,6 +329,24 @@ void update_process_state_rr(struct task_struct *t, struct list_head *dst_queue)
   else t->status=ST_RUN;
 }
 
+void update_current_state_rr(struct list_head *dst_queue)
+{
+    /* Updates the state of current process */
+    struct task_struct *pcb_curr_task = current();
+//    if (dst_queue == &freequeue) pcb_curr_task->status = ST_FREE;
+    /*else*/ if (dst_queue == &readyqueue) pcb_curr_task->status = ST_READY;
+    else pcb_curr_task->status = ST_BLOCKED;
+
+    /* Removes current process from its current queue and put it to dst_queue
+     * only if the current process is not the idle process and it's not the only
+     * available process which status is ready.
+     */
+    if ((pcb_curr_task != idle_task) & (!list_empty(&readyqueue))) {
+        list_del(&(pcb_curr_task->list));
+        list_add_tail(&(pcb_curr_task->list), dst_queue);
+    }
+}
+
 void sched_next_rr(void)
 {
   struct list_head *e;
@@ -358,16 +370,7 @@ void sched_next_rr(void)
   task_switch((union task_union*)t);
 }
 
-/*void update_current_state_rr(struct list_head *dest) {
-  struct task_struct * curr = current();
-  struct list_head * lh = &curr->list;
-    curr->estats.system_ticks += get_ticks()-tsk->estats.elapsed_total_ticks;
-    curr->estats.elapsed_total_ticks = get_ticks();
-    curr->estat = ST_BLOCKED;
-  list_add_tail(lh, dest);
-}*/
-
-void block(struct list_head * process, struct list_head * dst_queue) {
+/*void block(struct list_head * process, struct list_head * dst_queue) {
     list_add_tail(process, dst_queue);
     sched_next_rr();
 }
@@ -375,5 +378,38 @@ void block(struct list_head * process, struct list_head * dst_queue) {
 void unblock(struct list_head * process) {
     list_del(process);
     list_add(process, &readyqueue);
+}*/
+
+/* endpoint determines if the current process will block at the beginning
+ * of the keyboardqueue (0) or at the end (1)
+ */
+void block_to_keyboardqueue(int endpoint) {
+
+    /* Blocks the current process at the end of the keyboardqueue */
+    if (endpoint == 1) {
+        update_current_state_rr(&keyboardqueue);
+    }
+
+    /* Blocks the current process at the beginning of the keyboardqueue */
+    else {
+        struct task_struct *pcb_curr_task = current();
+        pcb_curr_task->status = ST_BLOCKED;
+        if ((pcb_curr_task != idle_task) & (!list_empty(&readyqueue))) {
+            list_del(&(pcb_curr_task->list));
+            list_add(&(pcb_curr_task->list), &keyboardqueue);
+        }
+    }
+    sched_next_rr();
 }
+
+void unblock_from_keyboardqueue() {
+    struct list_head *first = list_first(&keyboardqueue);
+    struct task_struct *task_first = list_head_to_task_struct(first);
+
+    task_first->status = ST_READY;
+    list_del(first);
+    list_add_tail(first, &readyqueue);
+    if (needs_sched_rr()) sched_next_rr();
+}
+
 
